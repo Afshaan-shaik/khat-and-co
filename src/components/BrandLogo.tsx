@@ -31,7 +31,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         fill="none"
         className="brand-envelope-mark"
         style={{
-          height: '62px',
+          height: '66px',
           width: 'auto',
           flexShrink: 0,
           display: 'block'
@@ -144,7 +144,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       {/* ── Textual Brand Identity (HTML with crisp typography & no clipping) ── */}
       <div className="brand-text-block">
         <div className="brand-title">
-          Khat <span className="brand-amp">&amp;</span> Co.
+          Khath <span className="brand-amp">&amp;</span> Co.
         </div>
         <div
           className="brand-tagline"

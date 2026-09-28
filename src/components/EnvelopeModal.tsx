@@ -106,7 +106,7 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
             <img src="/khat-mark.svg" alt="" aria-hidden="true" width="32" height="26" />
             <div>
               <span className="font-serif fs-5 fw-bold text-nowrap" style={{ color: 'var(--ui-text)' }}>
-                Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+                Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
               </span>
               <span className="d-none d-sm-inline ms-2 small text-muted font-kalam">
                 {isRecipientFlow ? `Letter for ${letter.recipient}` : 'Reader Preview Mode'}
@@ -225,7 +225,7 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
                   <rect x="6" y="6" width="52" height="64" fill="#EAF0F8" stroke="#3E5C8A" strokeWidth="1.5" />
                   <path d="M22 36 C24 30 30 26 38 28 C42 29 46 27 48 24 C46 30 43 33 40 34 C44 38 41 44 34 44 C28 44 24 40 22 36 Z" fill="#FFFFFF" stroke="#3E5C8A" strokeWidth="1.5" />
                   <text x="32" y="58" textAnchor="middle" fill="#3E5C8A" fontSize="7" fontFamily="'Instrument Sans', sans-serif" fontWeight="700">
-                    KHAT &amp; CO
+                    KHATH &amp; CO
                   </text>
                 </svg>
               </div>

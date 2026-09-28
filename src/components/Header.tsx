@@ -30,7 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
             href="#"
             className="brand-link"
             role="banner"
-            aria-label="Khat & Co. — letters for the people you miss"
+            aria-label="Khath & Co. — letters for the people you miss"
             data-testid="logo"
             onClick={(e) => e.preventDefault()}
           >

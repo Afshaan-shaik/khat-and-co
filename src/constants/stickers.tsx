@@ -258,7 +258,7 @@ export const STICKER_REGISTRY: Record<string, StickerDefinition> = {
           भारत INDIA
         </text>
         <text x="32" y="65" textAnchor="middle" fill="#1F2340" fontSize="6" fontFamily="'Instrument Sans', sans-serif" fontWeight="600">
-          KHAT &amp; CO
+          KHATH &amp; CO
         </text>
       </svg>
     )
@@ -348,7 +348,7 @@ export const STICKER_REGISTRY: Record<string, StickerDefinition> = {
           <circle cx="42" cy="42" r="32" stroke="#1F2340" strokeWidth="1.2" strokeDasharray="4 2" opacity="0.75" />
           {/* Top arched text simulation */}
           <text x="42" y="24" textAnchor="middle" fill="#1F2340" fontSize="7" fontFamily="'Instrument Sans', sans-serif" fontWeight="700" letterSpacing="1.2" opacity="0.85">
-            KHAT &amp; CO. POST
+            KHATH &amp; CO. POST
           </text>
           {/* Today's dynamic date in center */}
           <line x1="16" y1="36" x2="68" y2="36" stroke="#1F2340" strokeWidth="1.5" opacity="0.7" />

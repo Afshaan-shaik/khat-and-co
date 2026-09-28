@@ -427,7 +427,7 @@ export const App: React.FC = () => {
           {/* Footer branding */}
           <footer className="app-footer">
             <p className="app-footer-name">
-              Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+              Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
             </p>
             <p className="app-footer-tagline">
               खत · letters for the people you miss · Free, no-login digital stationery
