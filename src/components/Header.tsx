@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   theme: 'dark' | 'light';
@@ -20,38 +21,27 @@ export const Header: React.FC<HeaderProps> = ({
   isExporting = false
 }) => {
   return (
-    <header className="app-header px-3 px-md-5">
+    <header className="app-header px-3 px-md-4 px-lg-5">
       <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
 
-        {/* ── Brand Logo (bigger) ── */}
-        <a className="brand-link" role="banner" aria-label="Khat & Co. — letters for the people you miss">
-          {/* Full logo for sm+ */}
-          <img
-            src="/khat-logo.svg"
-            alt="Khat & Co."
-            className="brand-logo-img d-none d-sm-block"
-            width="280"
-            height="72"
-          />
-          {/* Mark + text fallback for tiny mobile */}
-          <div className="d-flex align-items-center gap-2 d-sm-none">
-            <img src="/khat-mark.svg" alt="" aria-hidden="true" width="38" height="34" />
-            <div className="brand-mobile-text">
-              <span className="brand-mobile-name">
-                Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
-              </span>
-              <span className="brand-mobile-sub">खत · letters for you</span>
-            </div>
-          </div>
+        {/* ── Brand Logo (90px on desktop, enhanced & bright) ── */}
+        <a
+          href="#"
+          className="brand-link"
+          role="banner"
+          aria-label="Khat & Co. — letters for the people you miss"
+          onClick={(e) => e.preventDefault()}
+        >
+          <BrandLogo theme={theme} className="brand-logo-img" />
         </a>
 
-        {/* ── Free badge (centre, hidden on xs) ── */}
-        <span className="header-free-badge d-none d-lg-block">
+        {/* ── Free badge (centre, hidden on smaller screens) ── */}
+        <span className="header-free-badge d-none d-xl-block">
           Free. No account needed.
         </span>
 
         {/* ── Action Controls ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', justifyContent: 'flex-end', flexShrink: 0 }}>
 
           {/* Weekly Prompt */}
           <button
@@ -126,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Toggle dark/light desk theme"
           >
             {theme === 'dark' ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FAD889" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
               </svg>

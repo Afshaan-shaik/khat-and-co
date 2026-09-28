@@ -24,11 +24,6 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
   if (inlineSidebar) {
     return (
       <div className="sticker-section">
-        {/* Header */}
-        <div className="sticker-section-header">
-          <p className="sticker-section-title">Stickers &amp; Stamps</p>
-          <p className="sticker-section-sub">डाक टिकट व सुंदर स्टीकर्स</p>
-        </div>
 
         {/* Category Tabs */}
         <div className="sticker-cat-tabs" role="tablist" aria-label="Sticker categories">
