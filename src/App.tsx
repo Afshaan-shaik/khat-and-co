@@ -75,7 +75,6 @@ export const App: React.FC = () => {
       if (hash && (hash.startsWith('#l=') || hash.length > 5)) {
         const decoded = decodeLetterFromHash(hash);
         if (decoded) {
-          // Never overwrite recipient's own draft! We open it in recipient envelope mode.
           setRecipientLetter(decoded);
           setIsRecipientFlow(true);
           setIsEnvelopeOpen(true);
@@ -100,11 +99,9 @@ export const App: React.FC = () => {
   const handleSelectTemplate = (tmpl: PaperTemplate) => {
     setLetter((prev) => {
       let newInk = prev.inkColor;
-      // If switching to dark paper and ink is dark, switch to default light ink
       if (tmpl.isDarkPaper) {
         newInk = tmpl.defaultInk;
       } else {
-        // If switching from dark to light paper and ink was light, switch to default dark ink
         const currentTmpl = PAPER_TEMPLATES.find((t) => t.id === prev.templateId);
         if (currentTmpl?.isDarkPaper) {
           newInk = tmpl.defaultInk;
@@ -135,7 +132,6 @@ export const App: React.FC = () => {
 
   // Add Sticker
   const handleAddSticker = (stickerDef: StickerDefinition) => {
-    // Determine random subtle placement on the letter
     const count = letter.stickers.length;
     const offsetX = 20 + ((count * 15) % 60);
     const offsetY = 25 + ((count * 12) % 55);
@@ -169,7 +165,6 @@ export const App: React.FC = () => {
         await navigator.clipboard.writeText(shareUrl);
         showToast('✉️ Share link copied to clipboard! Send it to your loved one.');
       } else {
-        // Fallback for older browsers
         prompt('Copy this letter link to share:', shareUrl);
       }
     } catch {
@@ -240,8 +235,6 @@ export const App: React.FC = () => {
 
     setLetter(replyLetter);
     saveDraft(replyLetter);
-
-    // Clear hash so recipient now has their clean editor
     window.history.replaceState(null, '', window.location.pathname);
     setIsEnvelopeOpen(false);
     setRecipientLetter(null);
@@ -252,7 +245,6 @@ export const App: React.FC = () => {
   const handleCloseEnvelope = () => {
     setIsEnvelopeOpen(false);
     if (isRecipientFlow) {
-      // Clear hash if closing read view
       window.history.replaceState(null, '', window.location.pathname);
       setRecipientLetter(null);
     }
@@ -262,8 +254,8 @@ export const App: React.FC = () => {
     PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
 
   return (
-    <div className="min-vh-100 d-flex flex-column">
-      {/* Header with left-aligned brand logo matching user image */}
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {/* Sticky Header */}
       <Header
         theme={theme}
         onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -274,50 +266,68 @@ export const App: React.FC = () => {
         isExporting={isExporting}
       />
 
-      {/* Main Stationery Desk Workspace */}
-      <main className="container-fluid py-4 px-3 px-md-4 flex-grow-1">
-        {/* Template Gallery Selector */}
-        <TemplatePicker
-          selectedTemplateId={letter.templateId}
-          onSelectTemplate={handleSelectTemplate}
-        />
+      {/* Two-column workspace: sidebar + editor */}
+      <div className="workspace-layout flex-grow-1">
+        {/* ── LEFT SIDEBAR PANEL ── */}
+        <aside className="sidebar-panel" aria-label="Letter customization panel">
 
-        {/* Handwriting Font, Ink Swatches & Ruled Lines Controls */}
-        <FontPicker
-          selectedFontId={letter.fontId}
-          onSelectFont={handleSelectFont}
-          selectedInk={letter.inkColor}
-          onSelectInk={handleSelectInk}
-          isDarkPaper={currentTemplate.isDarkPaper}
-          ruledLines={letter.ruledLines}
-          onToggleRuledLines={handleToggleRuledLines}
-        />
+          {/* Paper Stationery Picker */}
+          <section aria-labelledby="paper-section-label">
+            <div className="section-label" id="paper-section-label">
+              <span>Paper</span>
+            </div>
+            <TemplatePicker
+              selectedTemplateId={letter.templateId}
+              onSelectTemplate={handleSelectTemplate}
+            />
+          </section>
 
-        {/* Letter Stationery Sheet on the Desk */}
-        <LetterEditor
-          letter={letter}
-          onChangeLetter={handleUpdateLetter}
-          letterSheetRef={letterSheetRef}
-        />
-      </main>
+          {/* Handwriting Font Picker */}
+          <section aria-labelledby="font-section-label">
+            <FontPicker
+              selectedFontId={letter.fontId}
+              onSelectFont={handleSelectFont}
+              selectedInk={letter.inkColor}
+              onSelectInk={handleSelectInk}
+              isDarkPaper={currentTemplate.isDarkPaper}
+              ruledLines={letter.ruledLines}
+              onToggleRuledLines={handleToggleRuledLines}
+            />
+          </section>
 
-      {/* Footer Branding & Warm Tagline */}
-      <footer className="py-4 text-center border-top mt-auto" style={{ borderColor: 'var(--ui-panel-border)' }}>
-        <div className="container">
-          <p className="font-serif fs-5 mb-1" style={{ color: 'var(--ui-text)' }}>
-            Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
-          </p>
-          <p className="small text-muted font-kalam m-0">
-            खत · letters for the people you miss · Free, no-login digital stationery
-          </p>
-        </div>
+          {/* Sticker & Stamp Collection */}
+          <section aria-labelledby="sticker-section-label">
+            <div className="section-label" id="sticker-section-label">
+              <span>Stickers &amp; Stamps</span>
+            </div>
+            <StickerDrawer
+              onAddSticker={handleAddSticker}
+              stickerCount={letter.stickers.length}
+              inlineSidebar
+            />
+          </section>
+
+        </aside>
+
+        {/* ── RIGHT EDITOR COLUMN ── */}
+        <main className="editor-column" aria-label="Letter writing area">
+          <LetterEditor
+            letter={letter}
+            onChangeLetter={handleUpdateLetter}
+            letterSheetRef={letterSheetRef}
+          />
+        </main>
+      </div>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        <p className="app-footer-name">
+          Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+        </p>
+        <p className="app-footer-tagline">
+          खत · letters for the people you miss · Free, no-login digital stationery
+        </p>
       </footer>
-
-      {/* Floating Sticker Drawer & Tap-to-add */}
-      <StickerDrawer
-        onAddSticker={handleAddSticker}
-        stickerCount={letter.stickers.length}
-      />
 
       {/* Bilingual Weekly Writing Prompts Modal */}
       <PromptModal
@@ -325,7 +335,7 @@ export const App: React.FC = () => {
         onClose={() => setIsPromptOpen(false)}
       />
 
-      {/* The Animated Envelope Reading Modal */}
+      {/* Animated Envelope Reading Modal */}
       <EnvelopeModal
         isOpen={isEnvelopeOpen}
         letter={recipientLetter || letter}
@@ -334,7 +344,7 @@ export const App: React.FC = () => {
         isRecipientFlow={isRecipientFlow}
       />
 
-      {/* Gentle Floating Toast Notifications */}
+      {/* Floating Toast Notifications */}
       {toastMessage && (
         <div className="khat-toast" role="status" aria-live="polite">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FAD889" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

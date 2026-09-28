@@ -20,34 +20,40 @@ export const Header: React.FC<HeaderProps> = ({
   isExporting = false
 }) => {
   return (
-    <header className="app-header py-2 px-3 px-md-4">
-      <div className="container-fluid d-flex align-items-center justify-content-between flex-wrap gap-2">
-        {/* Brand Logo on the left side matching user's uploaded image */}
-        <div className="brand-link" role="banner" aria-label="Khat &amp; Co. — letters for the people you miss">
+    <header className="app-header px-3 px-md-5">
+      <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+
+        {/* ── Brand Logo (bigger) ── */}
+        <a className="brand-link" role="banner" aria-label="Khat & Co. — letters for the people you miss">
+          {/* Full logo for sm+ */}
           <img
             src="/khat-logo.svg"
-            alt="Khat &amp; Co."
+            alt="Khat & Co."
             className="brand-logo-img d-none d-sm-block"
-            width="240"
-            height="56"
+            width="280"
+            height="72"
           />
-          {/* Compact mark + text for small mobile screens */}
+          {/* Mark + text fallback for tiny mobile */}
           <div className="d-flex align-items-center gap-2 d-sm-none">
-            <img src="/khat-mark.svg" alt="" aria-hidden="true" width="40" height="34" />
-            <div className="d-flex flex-column">
-              <span className="font-serif fs-4 lh-1" style={{ color: 'var(--ui-text)' }}>
+            <img src="/khat-mark.svg" alt="" aria-hidden="true" width="38" height="34" />
+            <div className="brand-mobile-text">
+              <span className="brand-mobile-name">
                 Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
               </span>
-              <span className="font-kalam" style={{ fontSize: '11px', color: 'var(--ui-text-muted)' }}>
-                खत · letters for you
-              </span>
+              <span className="brand-mobile-sub">खत · letters for you</span>
             </div>
           </div>
-        </div>
+        </a>
 
-        {/* Action Controls on the right */}
-        <div className="d-flex align-items-center gap-2 flex-wrap ms-auto">
-          {/* Weekly Prompt Button */}
+        {/* ── Free badge (centre, hidden on xs) ── */}
+        <span className="header-free-badge d-none d-lg-block">
+          Free. No account needed.
+        </span>
+
+        {/* ── Action Controls ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+
+          {/* Weekly Prompt */}
           <button
             type="button"
             className="btn-khat-secondary"
@@ -62,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="d-inline d-md-none">Prompt</span>
           </button>
 
-          {/* See it as your reader will (Preview) */}
+          {/* Reader Preview */}
           <button
             type="button"
             className="btn-khat-secondary"
@@ -78,10 +84,10 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="d-inline d-lg-none">Preview</span>
           </button>
 
-          {/* Save as Picture (PNG) */}
+          {/* Save as Picture */}
           <button
             type="button"
-            className="btn-khat-secondary"
+            className="btn-khat-secondary d-none d-sm-inline-flex"
             onClick={onSavePicture}
             disabled={isExporting}
             title="Download high-resolution image of your letter"
@@ -95,7 +101,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="d-none d-md-inline">{isExporting ? 'Saving...' : 'Save Picture'}</span>
           </button>
 
-          {/* Copy Share Link */}
+          {/* Share Letter — primary CTA */}
           <button
             type="button"
             className="btn-khat-primary"
@@ -107,10 +113,11 @@ export const Header: React.FC<HeaderProps> = ({
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
-            <span>Share Letter</span>
+            <span className="d-none d-sm-inline">Share Letter</span>
+            <span className="d-inline d-sm-none">Share</span>
           </button>
 
-          {/* Theme Toggle (Dark Desk / Light Paper) */}
+          {/* Theme Toggle */}
           <button
             type="button"
             className="btn-khat-secondary btn-icon-only"
@@ -119,18 +126,17 @@ export const Header: React.FC<HeaderProps> = ({
             aria-label="Toggle dark/light desk theme"
           >
             {theme === 'dark' ? (
-              // Sun icon
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
               </svg>
             ) : (
-              // Moon icon
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
               </svg>
             )}
           </button>
+
         </div>
       </div>
     </header>

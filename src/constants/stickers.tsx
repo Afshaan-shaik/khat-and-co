@@ -887,5 +887,360 @@ export const STICKER_REGISTRY: Record<string, StickerDefinition> = {
         </text>
       </svg>
     )
+  },
+
+  // -------------------------------------------------------------
+  // BONUS: FUNNY, ROMANTIC & AESTHETIC STICKERS
+  // -------------------------------------------------------------
+
+  // ── HEARTS & SEALS (new) ──
+  'heart-crying': {
+    id: 'heart-crying',
+    name: 'Crying Heart (Missing You!)',
+    category: 'hearts-seals',
+    width: 56,
+    height: 56,
+    render: () => (
+      <svg viewBox="0 0 56 56" width="100%" height="100%" fill="none">
+        <path d="M28 46 L26 44C16.8 35.6 10 29.8 10 22.2 C10 16.2 14.8 11.4 20.8 11.4 C24 11.4 27.2 12.9 28 15 C28.8 12.9 32 11.4 35.2 11.4 C41.2 11.4 46 16.2 46 22.2 C46 29.8 39.2 35.6 30 44 L28 46Z" fill="#FF6B8A" stroke="#B4455A" strokeWidth="2.2" strokeLinejoin="round"/>
+        {/* Eyes */}
+        <ellipse cx="22" cy="26" rx="2" ry="2.5" fill="#fff" opacity="0.9"/>
+        <ellipse cx="34" cy="26" rx="2" ry="2.5" fill="#fff" opacity="0.9"/>
+        <circle cx="22" cy="27" r="1.2" fill="#7B2340"/>
+        <circle cx="34" cy="27" r="1.2" fill="#7B2340"/>
+        {/* Tears */}
+        <path d="M21 30 Q20 34 21.5 37" stroke="#93D4F5" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+        <path d="M35 30 Q36 34 34.5 37" stroke="#93D4F5" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+        <ellipse cx="21.5" cy="38" rx="1.5" ry="2" fill="#93D4F5"/>
+        <ellipse cx="34.5" cy="38" rx="1.5" ry="2" fill="#93D4F5"/>
+      </svg>
+    )
+  },
+
+  'heart-on-fire': {
+    id: 'heart-on-fire',
+    name: 'Heart on Fire 🔥',
+    category: 'hearts-seals',
+    width: 58,
+    height: 66,
+    render: () => (
+      <svg viewBox="0 0 58 66" width="100%" height="100%" fill="none">
+        {/* Flame */}
+        <path d="M29 4 C22 10 18 16 24 22 C20 16 28 8 29 4Z" fill="#FAD889"/>
+        <path d="M29 4 C38 10 42 18 36 24 C40 16 32 8 29 4Z" fill="#F4825A"/>
+        <path d="M24 22 C20 28 26 32 29 26 C32 32 38 28 34 22 C31 28 27 28 24 22Z" fill="#F4825A"/>
+        {/* Heart */}
+        <path d="M29 58 L27 56.2 C17.4 47.5 10 41.4 10 33.4 C10 27.2 14.8 22 21 22 C24.5 22 27.8 23.6 29 26 C30.2 23.6 33.5 22 37 22 C43.2 22 48 27.2 48 33.4 C48 41.4 40.6 47.5 31 56.2 L29 58Z" fill="#B4455A" stroke="#7B2340" strokeWidth="2" strokeLinejoin="round"/>
+      </svg>
+    )
+  },
+
+  'heart-bandaged': {
+    id: 'heart-bandaged',
+    name: 'Healing Heart 🩹',
+    category: 'hearts-seals',
+    width: 60,
+    height: 54,
+    render: () => (
+      <svg viewBox="0 0 60 54" width="100%" height="100%" fill="none">
+        <path d="M30 46 L28 44.2 C18.4 35.7 11 29.5 11 21.5 C11 15.3 15.8 10 22 10 C25.5 10 28.8 11.6 30 14 C31.2 11.6 34.5 10 38 10 C44.2 10 49 15.3 49 21.5 C49 29.5 41.6 35.7 32 44.2 L30 46Z" fill="#FFB3C1" stroke="#B4455A" strokeWidth="2.2" strokeLinejoin="round"/>
+        {/* Band-Aid */}
+        <rect x="19" y="23" width="22" height="8" rx="3" fill="#FAD889" stroke="#E0A800" strokeWidth="1.2"/>
+        <rect x="26" y="22" width="8" height="10" rx="2" fill="#fff" stroke="#E0A800" strokeWidth="1"/>
+        <circle cx="30" cy="27" r="1.5" fill="#E0A800"/>
+      </svg>
+    )
+  },
+
+  'pinky-promise': {
+    id: 'pinky-promise',
+    name: 'Pinky Promise 🤙',
+    category: 'hearts-seals',
+    width: 64,
+    height: 68,
+    render: () => (
+      <svg viewBox="0 0 64 68" width="100%" height="100%" fill="none">
+        {/* Two pinkies linking */}
+        <path d="M20 54 C20 46 16 38 18 30 C20 24 26 22 28 28 C30 24 36 24 36 30" stroke="#D98A9A" strokeWidth="6" strokeLinecap="round" fill="none"/>
+        <path d="M44 54 C44 46 48 38 46 30 C44 24 38 22 36 28 C34 24 28 24 28 30" stroke="#D98A9A" strokeWidth="6" strokeLinecap="round" fill="none"/>
+        {/* Thumbs touch at top */}
+        <circle cx="28" cy="30" r="4" fill="#E9B7C1" stroke="#B4455A" strokeWidth="1.5"/>
+        <circle cx="36" cy="30" r="4" fill="#E9B7C1" stroke="#B4455A" strokeWidth="1.5"/>
+        <path d="M28 30 L36 30" stroke="#B4455A" strokeWidth="2" strokeLinecap="round"/>
+        {/* Hearts above */}
+        <path d="M26 18 L25.2 17.2 C22.6 14.6 21 13 21 11.2 C21 9.7 22.2 8.5 23.7 8.5 C24.5 8.5 25.3 8.9 25.7 9.5 C26.1 8.9 26.9 8.5 27.7 8.5 C29.2 8.5 30.4 9.7 30.4 11.2 C30.4 13 28.8 14.6 26.2 17.2 L26 18Z" fill="#B4455A"/>
+        <path d="M38 18 L37.2 17.2 C34.6 14.6 33 13 33 11.2 C33 9.7 34.2 8.5 35.7 8.5 C36.5 8.5 37.3 8.9 37.7 9.5 C38.1 8.9 38.9 8.5 39.7 8.5 C41.2 8.5 42.4 9.7 42.4 11.2 C42.4 13 40.8 14.6 38.2 17.2 L38 18Z" fill="#B4455A"/>
+        <text x="32" y="64" textAnchor="middle" fill="#B4455A" fontSize="9" fontFamily="'Caveat', 'Kalam', cursive" fontWeight="700">pinky promise</text>
+      </svg>
+    )
+  },
+
+  // ── LITTLE THINGS & WORDS (new funny/romantic) ──
+  'label-you-make-me-crazy': {
+    id: 'label-you-make-me-crazy',
+    name: 'Label: "you make me crazy 🌀"',
+    category: 'little-things-words',
+    width: 126,
+    height: 40,
+    render: () => (
+      <svg viewBox="0 0 126 40" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="120" height="34" rx="8" fill="#FFF0F5" stroke="#FF6B8A" strokeWidth="1.8" strokeDasharray="4 3"/>
+        <text x="63" y="25" textAnchor="middle" fill="#B4455A" fontSize="16" fontFamily="'Caveat', 'Kalam', cursive" fontWeight="700">you make me crazy 🌀</text>
+      </svg>
+    )
+  },
+
+  'label-its-you': {
+    id: 'label-its-you',
+    name: 'Label: "it\'s always been you"',
+    category: 'little-things-words',
+    width: 140,
+    height: 40,
+    render: () => (
+      <svg viewBox="0 0 140 40" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="134" height="34" rx="4" fill="#FBF7FF" stroke="#7C5CBF" strokeWidth="2"/>
+        <text x="70" y="25" textAnchor="middle" fill="#5A3F99" fontSize="15" fontFamily="'Instrument Serif', serif" fontStyle="italic">it's always been you ✨</text>
+      </svg>
+    )
+  },
+
+  'label-ugh-miss-you': {
+    id: 'label-ugh-miss-you',
+    name: 'Label: "ugh I miss you so much"',
+    category: 'little-things-words',
+    width: 152,
+    height: 42,
+    render: () => (
+      <svg viewBox="0 0 152 42" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="146" height="36" rx="18" fill="#F0F7FF" stroke="#3E5C8A" strokeWidth="1.8"/>
+        <text x="76" y="26" textAnchor="middle" fill="#243C66" fontSize="15" fontFamily="'Caveat', 'Kalam', cursive" fontWeight="600">ugh I miss you so much 😩</text>
+      </svg>
+    )
+  },
+
+  'label-sending-hugs': {
+    id: 'label-sending-hugs',
+    name: 'Label: "sending virtual hugs"',
+    category: 'little-things-words',
+    width: 140,
+    height: 42,
+    render: () => (
+      <svg viewBox="0 0 140 42" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="134" height="36" rx="18" fill="#FFF4EC" stroke="#E07040" strokeWidth="1.8"/>
+        <text x="70" y="26" textAnchor="middle" fill="#C05020" fontSize="15" fontFamily="'Caveat', 'Kalam', cursive" fontWeight="700">sending virtual hugs 🤗</text>
+      </svg>
+    )
+  },
+
+  'label-cheesy-but-true': {
+    id: 'label-cheesy-but-true',
+    name: 'Label: "cheesy but true 🧀"',
+    category: 'little-things-words',
+    width: 126,
+    height: 42,
+    render: () => (
+      <svg viewBox="0 0 126 42" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="120" height="36" rx="6" fill="#FFFBEC" stroke="#FAD030" strokeWidth="2"/>
+        <text x="63" y="26" textAnchor="middle" fill="#8A6800" fontSize="15" fontFamily="'Caveat', 'Kalam', cursive" fontWeight="700">cheesy but true 🧀</text>
+      </svg>
+    )
+  },
+
+  'label-dil-se': {
+    id: 'label-dil-se',
+    name: 'Label: "दिल से दिल तक"',
+    category: 'little-things-words',
+    width: 116,
+    height: 44,
+    render: () => (
+      <svg viewBox="0 0 116 44" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="110" height="38" rx="6" fill="#FFF0F4" stroke="#B4455A" strokeWidth="2"/>
+        <text x="58" y="20" textAnchor="middle" fill="#B4455A" fontSize="13" fontFamily="'Kalam', cursive" fontWeight="700">दिल से दिल तक</text>
+        <text x="58" y="36" textAnchor="middle" fill="#D98A9A" fontSize="10" fontFamily="'Instrument Serif', serif" fontStyle="italic">heart to heart</text>
+      </svg>
+    )
+  },
+
+  'label-aaj-yaad-aaye': {
+    id: 'label-aaj-yaad-aaye',
+    name: 'Label: "आज बहुत याद आये"',
+    category: 'little-things-words',
+    width: 136,
+    height: 44,
+    render: () => (
+      <svg viewBox="0 0 136 44" width="100%" height="100%" fill="none">
+        <rect x="3" y="3" width="130" height="38" rx="6" fill="#F6EFE3" stroke="#1F2340" strokeWidth="2"/>
+        <text x="68" y="22" textAnchor="middle" fill="#1F2340" fontSize="14" fontFamily="'Kalam', cursive" fontWeight="700">आज बहुत याद आये 💭</text>
+        <text x="68" y="37" textAnchor="middle" fill="#5E6482" fontSize="10" fontFamily="'Instrument Serif', serif" fontStyle="italic">missed you so much today</text>
+      </svg>
+    )
+  },
+
+  // ── SKY, GARDEN & TAPE (new aesthetic) ──
+  'sticker-moon-stars': {
+    id: 'sticker-moon-stars',
+    name: 'Moon & Stars (Thinking of You)',
+    category: 'sky-garden-tape',
+    width: 64,
+    height: 60,
+    render: () => (
+      <svg viewBox="0 0 64 60" width="100%" height="100%" fill="none">
+        {/* Stars */}
+        <path d="M10 12 L11.2 15.6 L15 15.6 L12.2 17.8 L13.4 21.4 L10 19.2 L6.6 21.4 L7.8 17.8 L5 15.6 L8.8 15.6Z" fill="#FAD889"/>
+        <path d="M52 8 L52.8 10.4 L55.4 10.4 L53.3 11.9 L54.1 14.3 L52 12.8 L49.9 14.3 L50.7 11.9 L48.6 10.4 L51.2 10.4Z" fill="#FAD889"/>
+        <path d="M56 32 L56.6 33.8 L58.5 33.8 L57 34.9 L57.6 36.7 L56 35.6 L54.4 36.7 L55 34.9 L53.5 33.8 L55.4 33.8Z" fill="#FAD889" opacity="0.8"/>
+        {/* Crescent moon */}
+        <path d="M38 52 C28 52 20 44 20 34 C20 28 22.4 22.6 26.4 18.8 C18.6 20.4 13 27.4 13 36 C13 46.4 21.4 55 31.4 55 C37.2 55 42.4 52.2 46 47.8 C43.5 50.4 40.9 52 38 52Z" fill="#FAD889"/>
+        <path d="M38 52 C28 52 20 44 20 34 C20 28 22.4 22.6 26.4 18.8 C18.6 20.4 13 27.4 13 36 C13 46.4 21.4 55 31.4 55 C37.2 55 42.4 52.2 46 47.8 C43.5 50.4 40.9 52 38 52Z" stroke="#E0A800" strokeWidth="1.5" fill="none"/>
+        <circle cx="8" cy="40" r="1.5" fill="#FAD889" opacity="0.6"/>
+        <circle cx="44" cy="18" r="1.8" fill="#FAD889" opacity="0.7"/>
+      </svg>
+    )
+  },
+
+  'sticker-butterflies': {
+    id: 'sticker-butterflies',
+    name: 'Butterflies in Stomach 🦋',
+    category: 'sky-garden-tape',
+    width: 72,
+    height: 60,
+    render: () => (
+      <svg viewBox="0 0 72 60" width="100%" height="100%" fill="none">
+        {/* Butterfly 1 */}
+        <ellipse cx="22" cy="22" rx="12" ry="8" fill="#E9B7C1" stroke="#B4455A" strokeWidth="1.2" transform="rotate(-20 22 22)"/>
+        <ellipse cx="14" cy="30" rx="9" ry="6" fill="#D98A9A" stroke="#B4455A" strokeWidth="1.2" transform="rotate(10 14 30)"/>
+        <path d="M22 22 C20 24 20 28 22 30" stroke="#1F2340" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        {/* Antenna */}
+        <path d="M19 18 Q14 10 12 8" stroke="#1F2340" strokeWidth="1.2" strokeLinecap="round"/>
+        <circle cx="12" cy="8" r="1.5" fill="#B4455A"/>
+        <path d="M22 19 Q20 10 19 8" stroke="#1F2340" strokeWidth="1.2" strokeLinecap="round"/>
+        <circle cx="19" cy="8" r="1.5" fill="#B4455A"/>
+
+        {/* Butterfly 2 (smaller, different color) */}
+        <ellipse cx="50" cy="38" rx="10" ry="6" fill="#B4D8F0" stroke="#3E5C8A" strokeWidth="1.2" transform="rotate(15 50 38)"/>
+        <ellipse cx="58" cy="30" rx="7" ry="5" fill="#93C5E8" stroke="#3E5C8A" strokeWidth="1.2" transform="rotate(-10 58 30)"/>
+        <path d="M50 38 C52 36 52 32 50 30" stroke="#1F2340" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        <path d="M52 42 Q58 50 60 52" stroke="#1F2340" strokeWidth="1.2" strokeLinecap="round"/>
+        <circle cx="60" cy="52" r="1.5" fill="#3E5C8A"/>
+        <path d="M48 42 Q50 52 50 54" stroke="#1F2340" strokeWidth="1.2" strokeLinecap="round"/>
+        <circle cx="50" cy="54" r="1.5" fill="#3E5C8A"/>
+
+        {/* Heart between */}
+        <path d="M36 32 L34.8 30.9 C31.6 27.8 29.5 26 29.5 23.8 C29.5 22.1 30.8 20.8 32.5 20.8 C33.4 20.8 34.3 21.2 34.8 21.9 C35.3 21.2 36.2 20.8 37.1 20.8 C38.8 20.8 40.1 22.1 40.1 23.8 C40.1 26 38 27.8 34.8 30.9 L36 32Z" fill="#B4455A"/>
+      </svg>
+    )
+  },
+
+  'sticker-chai': {
+    id: 'sticker-chai',
+    name: 'Chai Cup ☕ (Thinking of You)',
+    category: 'sky-garden-tape',
+    width: 58,
+    height: 68,
+    render: () => (
+      <svg viewBox="0 0 58 68" width="100%" height="100%" fill="none">
+        {/* Steam wisps */}
+        <path d="M20 16 Q18 10 20 4" stroke="#9BA2BD" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+        <path d="M29 14 Q27 8 29 2" stroke="#9BA2BD" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+        <path d="M38 16 Q36 10 38 4" stroke="#9BA2BD" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+        {/* Cup */}
+        <path d="M10 22 L14 56 C14 57 15 58 16 58 L42 58 C43 58 44 57 44 56 L48 22Z" fill="#FAD889" stroke="#E0A800" strokeWidth="2" strokeLinejoin="round"/>
+        {/* Handle */}
+        <path d="M44 32 C54 32 54 46 44 46" stroke="#E0A800" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+        {/* Chai inside */}
+        <path d="M13 28 L45 28" stroke="#C07030" strokeWidth="14" opacity="0.35"/>
+        {/* Heart latte art */}
+        <path d="M29 48 L28.4 47.4 C26.2 45.2 24.6 43.8 24.6 42.2 C24.6 41 25.5 40 26.7 40 C27.3 40 27.9 40.3 28.2 40.7 C28.5 40.3 29.1 40 29.7 40 C30.9 40 31.8 41 31.8 42.2 C31.8 43.8 30.2 45.2 28 47.4 L29 48Z" fill="#C07030" opacity="0.8"/>
+        {/* Saucer */}
+        <ellipse cx="29" cy="60" rx="22" ry="4" fill="#E0A800" opacity="0.6"/>
+        {/* Label */}
+        <text x="29" y="64" textAnchor="middle" fill="#8A6800" fontSize="7" fontFamily="'Kalam', cursive">याद</text>
+      </svg>
+    )
+  },
+
+  'sticker-red-string': {
+    id: 'sticker-red-string',
+    name: 'Red String of Fate 🧵',
+    category: 'sky-garden-tape',
+    width: 80,
+    height: 60,
+    render: () => (
+      <svg viewBox="0 0 80 60" width="100%" height="100%" fill="none">
+        {/* String with a loop in middle = fate */}
+        <path d="M5 20 Q20 10 28 28 Q36 46 50 38 Q64 30 75 40" stroke="#B4455A" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+        {/* Left finger/hand hint */}
+        <circle cx="5" cy="20" r="4" fill="#F6EFE3" stroke="#B4455A" strokeWidth="1.5"/>
+        {/* Right finger */}
+        <circle cx="75" cy="40" r="4" fill="#F6EFE3" stroke="#B4455A" strokeWidth="1.5"/>
+        {/* Small hearts along string */}
+        <path d="M29 28 L28.6 27.6 C27.4 26.4 26.6 25.6 26.6 24.6 C26.6 23.8 27.2 23.2 28 23.2 C28.4 23.2 28.8 23.4 29 23.7 C29.2 23.4 29.6 23.2 30 23.2 C30.8 23.2 31.4 23.8 31.4 24.6 C31.4 25.6 30.6 26.4 29.4 27.6 L29 28Z" fill="#FAD889"/>
+        <path d="M51 38 L50.6 37.6 C49.4 36.4 48.6 35.6 48.6 34.6 C48.6 33.8 49.2 33.2 50 33.2 C50.4 33.2 50.8 33.4 51 33.7 C51.2 33.4 51.6 33.2 52 33.2 C52.8 33.2 53.4 33.8 53.4 34.6 C53.4 35.6 52.6 36.4 51.4 37.6 L51 38Z" fill="#FAD889"/>
+        {/* Label */}
+        <text x="40" y="56" textAnchor="middle" fill="#B4455A" fontSize="9" fontFamily="'Caveat', 'Kalam', cursive" fontWeight="600">red string of fate</text>
+      </svg>
+    )
+  },
+
+  'sticker-love-potion': {
+    id: 'sticker-love-potion',
+    name: 'Love Potion 🧪',
+    category: 'sky-garden-tape',
+    width: 54,
+    height: 70,
+    render: () => (
+      <svg viewBox="0 0 54 70" width="100%" height="100%" fill="none">
+        {/* Cork */}
+        <rect x="20" y="4" width="14" height="10" rx="3" fill="#C09060" stroke="#8A6030" strokeWidth="1.5"/>
+        {/* Neck */}
+        <rect x="22" y="13" width="10" height="8" fill="#FFB3C1" stroke="#B4455A" strokeWidth="1.2"/>
+        {/* Bottle body */}
+        <path d="M14 20 C10 22 8 28 8 36 C8 48 16 62 27 62 C38 62 46 48 46 36 C46 28 44 22 40 20Z" fill="#FF8FA3" stroke="#B4455A" strokeWidth="2"/>
+        {/* Liquid sparkle inside */}
+        <ellipse cx="27" cy="42" rx="14" ry="12" fill="#FFD6E0" opacity="0.7"/>
+        {/* Hearts floating in potion */}
+        <path d="M22 40 L21.4 39.4 C19.6 37.6 18.5 36.5 18.5 35.2 C18.5 34.2 19.3 33.4 20.3 33.4 C20.8 33.4 21.3 33.7 21.6 34 C21.9 33.7 22.4 33.4 22.9 33.4 C23.9 33.4 24.7 34.2 24.7 35.2 C24.7 36.5 23.6 37.6 21.8 39.4 L22 40Z" fill="#B4455A"/>
+        <path d="M32 46 L31.4 45.4 C29.6 43.6 28.5 42.5 28.5 41.2 C28.5 40.2 29.3 39.4 30.3 39.4 C30.8 39.4 31.3 39.7 31.6 40 C31.9 39.7 32.4 39.4 32.9 39.4 C33.9 39.4 34.7 40.2 34.7 41.2 C34.7 42.5 33.6 43.6 31.8 45.4 L32 46Z" fill="#B4455A"/>
+        {/* Label */}
+        <rect x="14" y="50" width="26" height="12" rx="3" fill="#FFF0F4" stroke="#B4455A" strokeWidth="1"/>
+        <text x="27" y="59" textAnchor="middle" fill="#B4455A" fontSize="8" fontFamily="'Kalam', cursive" fontWeight="700">Love!</text>
+        {/* Bubbles */}
+        <circle cx="34" cy="30" r="2.5" fill="none" stroke="#FF6B8A" strokeWidth="1.2"/>
+        <circle cx="20" cy="26" r="2" fill="none" stroke="#FF6B8A" strokeWidth="1.2"/>
+      </svg>
+    )
+  },
+
+  'sticker-telephone': {
+    id: 'sticker-telephone',
+    name: 'Vintage Telephone 📞',
+    category: 'stamps-postmarks',
+    width: 64,
+    height: 64,
+    render: () => (
+      <svg viewBox="0 0 64 64" width="100%" height="100%" fill="none">
+        {/* Base */}
+        <rect x="8" y="28" width="48" height="26" rx="6" fill="#3E5C8A" stroke="#243C66" strokeWidth="2"/>
+        {/* Dial circle */}
+        <circle cx="32" cy="42" r="10" fill="#F6EFE3" stroke="#243C66" strokeWidth="1.5"/>
+        <circle cx="32" cy="42" r="6" fill="#9BA2BD" stroke="#243C66" strokeWidth="1"/>
+        {/* Dial numbers dots */}
+        <circle cx="32" cy="35" r="1" fill="#243C66"/>
+        <circle cx="37" cy="37" r="1" fill="#243C66"/>
+        <circle cx="39" cy="42" r="1" fill="#243C66"/>
+        <circle cx="37" cy="47" r="1" fill="#243C66"/>
+        <circle cx="32" cy="49" r="1" fill="#243C66"/>
+        <circle cx="27" cy="47" r="1" fill="#243C66"/>
+        <circle cx="25" cy="42" r="1" fill="#243C66"/>
+        <circle cx="27" cy="37" r="1" fill="#243C66"/>
+        {/* Handset */}
+        <path d="M12 20 C12 14 18 8 24 10 C28 11 30 14 28 18 C26 22 22 22 20 24 C18 26 18 30 20 32 C22 34 24 34 26 32 C28 30 28 28 32 26 C36 24 40 24 42 20 C44 14 42 8 38 6 C32 4 24 6 18 12 C12 18 10 26 12 30" stroke="#243C66" strokeWidth="3.5" strokeLinecap="round" fill="none"/>
+        <path d="M12 20 C12 14 18 8 24 10" stroke="#5273A6" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        <path d="M40 22 C44 18 44 12 40 8" stroke="#5273A6" strokeWidth="3" strokeLinecap="round" fill="none"/>
+        {/* Heart on base */}
+        <path d="M44 38 L43.4 37.4 C41.8 35.8 40.8 35 40.8 33.8 C40.8 32.8 41.6 32 42.6 32 C43.1 32 43.6 32.3 43.9 32.7 C44.2 32.3 44.7 32 45.2 32 C46.2 32 47 32.8 47 33.8 C47 35 46 35.8 44.4 37.4 L44 38Z" fill="#B4455A"/>
+      </svg>
+    )
   }
 };
+
