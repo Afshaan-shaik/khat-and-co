@@ -4,6 +4,16 @@ import { PAPER_TEMPLATES } from '../constants/templates';
 export const DRAFT_STORAGE_KEY = 'khat-and-co:draft';
 export const THEME_STORAGE_KEY = 'khat-and-co:theme';
 
+export function isLightHex(hex: string): boolean {
+  if (!hex || !hex.startsWith('#')) return false;
+  const c = hex.replace('#', '');
+  const r = parseInt(c.substring(0, 2), 16) || 0;
+  const g = parseInt(c.substring(2, 4), 16) || 0;
+  const b = parseInt(c.substring(4, 6), 16) || 0;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.55;
+}
+
 export function getFormattedToday(): string {
   try {
     const now = new Date();
@@ -67,10 +77,24 @@ export function loadSavedDraft(): LetterData {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return createDefaultLetter();
     const parsed = JSON.parse(raw);
-    return {
+    const draft: LetterData = {
       ...createDefaultLetter(),
       ...parsed
     };
+
+    // Strict contrast sanitization: ensure ink is never white on cream or black on midnight
+    const tmpl = PAPER_TEMPLATES.find((t) => t.id === draft.templateId) || PAPER_TEMPLATES[0];
+    if (tmpl.isDarkPaper) {
+      if (!isLightHex(draft.inkColor)) {
+        draft.inkColor = tmpl.defaultInk;
+      }
+    } else {
+      if (isLightHex(draft.inkColor)) {
+        draft.inkColor = tmpl.defaultInk;
+      }
+    }
+
+    return draft;
   } catch (err) {
     console.warn('Could not load draft from localStorage', err);
     return createDefaultLetter();

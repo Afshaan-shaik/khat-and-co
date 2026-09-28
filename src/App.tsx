@@ -5,7 +5,8 @@ import {
   saveDraft,
   loadThemePreference,
   saveThemePreference,
-  getFormattedToday
+  getFormattedToday,
+  isLightHex
 } from './utils/storage';
 import { encodeLetterToHash, decodeLetterFromHash } from './utils/codec';
 import { exportLetterAsPicture } from './utils/export';
@@ -100,10 +101,12 @@ export const App: React.FC = () => {
     setLetter((prev) => {
       let newInk = prev.inkColor;
       if (tmpl.isDarkPaper) {
-        newInk = tmpl.defaultInk;
+        if (!isLightHex(newInk)) {
+          newInk = tmpl.defaultInk;
+        }
       } else {
         const currentTmpl = PAPER_TEMPLATES.find((t) => t.id === prev.templateId);
-        if (currentTmpl?.isDarkPaper) {
+        if (currentTmpl?.isDarkPaper || isLightHex(newInk)) {
           newInk = tmpl.defaultInk;
         }
       }
@@ -271,35 +274,47 @@ export const App: React.FC = () => {
         {/* ── LEFT SIDEBAR PANEL ── */}
         <aside className="sidebar-panel" aria-label="Letter customization panel">
 
-          {/* Paper Stationery Picker */}
-          <section aria-labelledby="paper-section-label">
-            <div className="section-label" id="paper-section-label">
-              <span>Paper</span>
-            </div>
+          {/* ── Hero Welcome / Prompt Header (Matching reference media_1790607353509.png) ── */}
+          <div className="sidebar-hero-block">
+            <h1 className="sidebar-hero-title">Write to someone you miss.</h1>
+            <p className="sidebar-hero-desc">
+              Choose your paper, write in your own words, and decorate it with stamps, hearts and tape. Save the finished letter as a picture or send it as a link.
+            </p>
+            <button
+              type="button"
+              className="btn-need-to-say"
+              onClick={() => setIsPromptOpen(true)}
+              aria-label="Need something to say? Open writing inspiration prompts"
+            >
+              Need something to say?
+            </button>
+          </div>
+
+          {/* ── Paper Stationery Gallery ── */}
+          <section aria-labelledby="paper-section-heading">
+            <h2 className="sidebar-section-serif" id="paper-section-heading">Paper</h2>
             <TemplatePicker
               selectedTemplateId={letter.templateId}
               onSelectTemplate={handleSelectTemplate}
             />
           </section>
 
-          {/* Handwriting Font Picker */}
-          <section aria-labelledby="font-section-label">
+          {/* ── Handwriting Font & Ink Picker ── */}
+          <section aria-label="Handwriting typography and ink controls">
             <FontPicker
               selectedFontId={letter.fontId}
               onSelectFont={handleSelectFont}
               selectedInk={letter.inkColor}
               onSelectInk={handleSelectInk}
+              paperDefaultInk={currentTemplate.defaultInk}
               isDarkPaper={currentTemplate.isDarkPaper}
               ruledLines={letter.ruledLines}
               onToggleRuledLines={handleToggleRuledLines}
             />
           </section>
 
-          {/* Sticker & Stamp Collection */}
-          <section aria-labelledby="sticker-section-label">
-            <div className="section-label" id="sticker-section-label">
-              <span>Stickers &amp; Stamps</span>
-            </div>
+          {/* ── Sticker & Stamp Collection ── */}
+          <section aria-label="Stickers and stamps collection">
             <StickerDrawer
               onAddSticker={handleAddSticker}
               stickerCount={letter.stickers.length}
