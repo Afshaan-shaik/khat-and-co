@@ -5,19 +5,24 @@
       .brand-title {
         font-family: 'Instrument Serif', Georgia, serif;
         font-size: 76px;
-        fill: #FFFFFF;
+        fill: #1F2340;
       }
       .brand-amp {
         font-family: 'Instrument Serif', Georgia, serif;
         font-style: italic;
-        fill: #FF6B8B;
+        fill: #B4455A;
       }
       .brand-sub {
         font-family: 'Kalam', 'Instrument Sans', system-ui, sans-serif;
         font-size: 25px;
         font-weight: 600;
         letter-spacing: 0.4px;
-        fill: #F8F2E6;
+        fill: #2C324E;
+      }
+      @media (prefers-color-scheme: dark) {
+        .brand-title { fill: #FFFFFF; }
+        .brand-amp { fill: #FF6B8B; }
+        .brand-sub { fill: #F8F2E6; }
       }
     </style>
   </defs>
@@ -51,21 +56,21 @@
 
     <!-- Floating hearts -->
     <g transform="translate(122, 8) rotate(-14) scale(0.65)">
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FFB5C5" />
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#E9B7C1" />
     </g>
     
     <g transform="translate(128, 30) rotate(18) scale(1.12)">
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FF4D6D" />
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#B4455A" />
     </g>
     
     <g transform="translate(138, 70) rotate(10) scale(0.72)">
-      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#FF7A95" />
+      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="#D98A9A" />
     </g>
   </g>
 
   <!-- Brand Wordmark -->
   <text x="176" y="76" class="brand-title">Khat <tspan class="brand-amp">&amp;</tspan> Co.</text>
   
-  <!-- Subtitle Tagline -->
+  <!-- Subtitle Tagline (expanded font size & bold) -->
   <text x="176" y="114" class="brand-sub">खत · letters for the people you miss</text>
 </svg>

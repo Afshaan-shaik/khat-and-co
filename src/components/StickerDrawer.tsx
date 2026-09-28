@@ -4,6 +4,7 @@ import { STICKER_CATEGORIES, STICKER_REGISTRY, StickerDefinition } from '../cons
 interface StickerDrawerProps {
   onAddSticker: (stickerDef: StickerDefinition) => void;
   stickerCount: number;
+  /** When true, renders inline inside the sidebar (no floating panel) */
   inlineSidebar?: boolean;
 }
 
@@ -19,15 +20,13 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
     (stk) => stk.category === activeCategory
   );
 
-  // ── INLINE SIDEBAR MODE ── (matches reference image media_1790607376417.png)
+  // ── INLINE SIDEBAR MODE ── (renders a static sticker collection block)
   if (inlineSidebar) {
     return (
-      <div className="stickers-stamps-card">
-        {/* Title in serif font */}
-        <h3 className="stickers-card-title">Stickers and stamps</h3>
+      <div className="sticker-section">
 
         {/* Category Tabs */}
-        <div className="sticker-cat-pill-tabs" role="tablist" aria-label="Sticker categories">
+        <div className="sticker-cat-tabs" role="tablist" aria-label="Sticker categories">
           {STICKER_CATEGORIES.map((cat) => {
             const isSelected = cat.id === activeCategory;
             return (
@@ -37,52 +36,50 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
                 aria-selected={isSelected}
                 type="button"
                 onClick={() => setActiveCategory(cat.id)}
-                className={`sticker-cat-pill ${isSelected ? 'active' : ''}`}
+                className={`sticker-cat-tab ${isSelected ? 'active' : ''}`}
               >
-                <span>{cat.label}</span>
+                {cat.label}
+                <span className="sticker-cat-label-hindi">{cat.labelHindi}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Sub-category header matching reference */}
-        <div className="sticker-subcat-header">
-          {STICKER_CATEGORIES.find((c) => c.id === activeCategory)?.label || 'Hearts and seals'}
-        </div>
-
-        {/* Sticker Buttons Grid */}
+        {/* Sticker Grid */}
         <div
-          className="sticker-square-grid"
+          className="sticker-grid"
           role="tabpanel"
-          aria-label={STICKER_CATEGORIES.find((c) => c.id === activeCategory)?.label}
+          aria-label={STICKER_CATEGORIES.find(c => c.id === activeCategory)?.label}
+          style={{ minHeight: '180px' }}
         >
           {filteredStickers.map((stk) => (
             <button
               key={stk.id}
               type="button"
-              className="sticker-square-btn"
+              className="sticker-preview-btn"
               onClick={() => onAddSticker(stk)}
               title={`Add ${stk.name} to letter`}
               aria-label={`Add ${stk.name}`}
             >
-              <div className="sticker-icon-wrapper">
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {stk.render()}
               </div>
             </button>
           ))}
         </div>
 
-        {/* Helper tip */}
-        <div className="sticker-card-footer">
+        {/* Tip */}
+        <div className="sticker-tip">
           ✨ Tap to add · drag &amp; rotate on paper
         </div>
       </div>
     );
   }
 
-  // ── FLOATING DRAWER MODE (Mobile fallback) ──
+  // ── FLOATING DRAWER MODE ── (mobile fallback, shown as floating button)
   return (
     <>
+      {/* Floating Toggle Button */}
       <div className="sticker-drawer-toggle no-export">
         <button
           type="button"
@@ -103,16 +100,18 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
         </button>
       </div>
 
+      {/* Floating Panel */}
       {isOpen && (
         <div
           className="sticker-drawer-panel no-export"
           role="dialog"
           aria-label="Sticker drawer"
         >
+          {/* Header */}
           <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--ui-panel-border)', background: 'var(--drawer-header-bg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <span style={{ fontSize: '17px', fontFamily: 'var(--font-serif)', color: 'var(--ui-text-bright)', display: 'block' }}>
-                Stickers and stamps
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--ui-text-bright)', display: 'block' }}>
+                Stamp &amp; Sticker Collection
               </span>
               <span className="font-kalam" style={{ fontSize: '12px', color: 'var(--ui-text-muted)' }}>
                 डाक टिकट व सुंदर स्टीकर्स
@@ -123,10 +122,12 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
               className="btn-close"
               aria-label="Close sticker drawer"
               onClick={() => setIsOpen(false)}
+              style={{ filter: 'var(--bs-btn-close-filter, none)' }}
             />
           </div>
 
-          <div className="sticker-cat-pill-tabs px-3 pt-2">
+          {/* Category Tabs */}
+          <div className="sticker-cat-tabs">
             {STICKER_CATEGORIES.map((cat) => {
               const isSelected = cat.id === activeCategory;
               return (
@@ -134,29 +135,35 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setActiveCategory(cat.id)}
-                  className={`sticker-cat-pill ${isSelected ? 'active' : ''}`}
+                  className={`sticker-cat-tab ${isSelected ? 'active' : ''}`}
                 >
-                  <span>{cat.label}</span>
+                  {cat.label}
                 </button>
               );
             })}
           </div>
 
-          <div className="sticker-square-grid p-3" style={{ maxHeight: '340px', overflowY: 'auto' }}>
+          {/* Sticker Grid */}
+          <div className="sticker-grid" style={{ minHeight: '260px', overflowY: 'auto' }}>
             {filteredStickers.map((stk) => (
               <button
                 key={stk.id}
                 type="button"
-                className="sticker-square-btn"
-                onClick={() => onAddSticker(stk)}
-                title={`Add ${stk.name}`}
+                className="sticker-preview-btn"
+                onClick={() => { onAddSticker(stk); }}
+                title={`Add ${stk.name} to letter`}
                 aria-label={`Add ${stk.name}`}
               >
-                <div className="sticker-icon-wrapper">
+                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {stk.render()}
                 </div>
               </button>
             ))}
+          </div>
+
+          {/* Tip */}
+          <div className="sticker-tip">
+            Tap to add to letter. Drag, rotate, or resize on paper!
           </div>
         </div>
       )}

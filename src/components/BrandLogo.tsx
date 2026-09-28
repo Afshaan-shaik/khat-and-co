@@ -13,9 +13,10 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const isDark = theme === 'dark';
 
-  // High contrast colors: pure white & rose in dark mode, crisp navy in light mode
+  // Colors optimized for high contrast, maximum legibility and premium elegance
   const titleColor = isDark ? '#FFFFFF' : '#1F2340';
   const ampColor = isDark ? '#FF6B8B' : '#B4455A';
+  // Tagline is bright warm ivory/cream in dark mode, crisp dark navy in light mode
   const taglineColor = isDark ? '#F8F2E6' : '#2C324E';
 
   return (
@@ -109,6 +110,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         </g>
 
         {/* Floating Hearts */}
+        {/* Top heart */}
         <g transform="translate(122, 8) rotate(-14) scale(0.65)">
           <path
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
@@ -116,6 +118,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           />
         </g>
 
+        {/* Middle heart (vibrant) */}
         <g transform="translate(128, 30) rotate(18) scale(1.12)">
           <path
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
@@ -123,6 +126,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           />
         </g>
 
+        {/* Bottom heart */}
         <g transform="translate(138, 70) rotate(10) scale(0.72)">
           <path
             d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
@@ -135,8 +139,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       <text
         x="176"
         y="76"
-        fill={titleColor}
-        className="brand-title"
         style={{
           fontFamily: "'Instrument Serif', Georgia, serif",
           fontSize: '76px',
@@ -147,8 +149,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       >
         Khat{' '}
         <tspan
-          fill={ampColor}
-          className="brand-amp"
           style={{
             fontFamily: "'Instrument Serif', Georgia, serif",
             fontStyle: 'italic',
@@ -165,8 +165,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       <text
         x="176"
         y="114"
-        fill={taglineColor}
-        className="brand-sub"
         style={{
           fontFamily: "'Kalam', 'Instrument Sans', system-ui, sans-serif",
           fontSize: '25px',

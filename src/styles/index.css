@@ -155,8 +155,18 @@ button, input, textarea, select {
 .font-kalam  { font-family: var(--font-kalam); }
 .font-caveat { font-family: var(--font-caveat); }
 
-/* Dark mode text always visible & bright (UI elements only, excluding letter sheet) */
-[data-theme="dark"] :is(.sidebar-panel, .app-header, .app-footer, .controls-card, .prompt-modal-card, .sticker-drawer-panel) :is(.text-muted, .small, label, span, p, h1, h2, h3, h4, h5, h6) {
+/* Dark mode text always visible & bright */
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] .small,
+[data-theme="dark"] label,
+[data-theme="dark"] span,
+[data-theme="dark"] p,
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6 {
   color: var(--ui-text);
 }
 
@@ -164,7 +174,7 @@ button, input, textarea, select {
   color: var(--ui-text-muted) !important;
 }
 
-/* Dark mode — form inputs/selects default to theme bg+text (browser UA override) */
+/* Dark mode — all form inputs/selects default to theme bg+text (browser UA override) */
 [data-theme="dark"] input:not([class*="letter"]):not(.letter-input-clean),
 [data-theme="dark"] select,
 [data-theme="dark"] textarea:not(.letter-input-clean):not(.letter-body-textarea) {
@@ -173,50 +183,14 @@ button, input, textarea, select {
   border-color: var(--ui-input-border);
 }
 
-/* Ensure stationery sheet text strictly respects paper ink color */
+/* Ensure stationery sheet text respects paper ink (explicit inline color from JS) */
 .letter-sheet,
-.letter-sheet *,
 .letter-sheet input,
 .letter-sheet textarea,
 .letter-sheet span,
 .letter-sheet h2,
-.letter-sheet p,
-.letter-sheet div {
+.letter-sheet p {
   color: inherit !important;
-}
-
-/* Dark mode SVG logo text fills */
-[data-theme="dark"] .brand-title,
-[data-theme="dark"] text.brand-title {
-  fill: #FFFFFF !important;
-  color: #FFFFFF !important;
-}
-[data-theme="dark"] .brand-sub,
-[data-theme="dark"] text.brand-sub {
-  fill: #F8F2E6 !important;
-  color: #F8F2E6 !important;
-}
-[data-theme="dark"] .brand-amp,
-[data-theme="dark"] tspan.brand-amp {
-  fill: #FF6B8B !important;
-  color: #FF6B8B !important;
-}
-
-/* Light mode SVG logo text fills */
-[data-theme="light"] .brand-title,
-[data-theme="light"] text.brand-title {
-  fill: #1F2340 !important;
-  color: #1F2340 !important;
-}
-[data-theme="light"] .brand-sub,
-[data-theme="light"] text.brand-sub {
-  fill: #2C324E !important;
-  color: #2C324E !important;
-}
-[data-theme="light"] .brand-amp,
-[data-theme="light"] tspan.brand-amp {
-  fill: #B4455A !important;
-  color: #B4455A !important;
 }
 
 /* Dark mode bootstrap close button */
@@ -501,502 +475,297 @@ button, input, textarea, select {
 }
 
 /* ============================================
-   SIDEBAR HERO & SECTION HEADERS
-   (Matching reference layout media_1790607353509.png)
+   PAPER TEMPLATE PICKER
    ============================================ */
 
-.sidebar-hero-block {
+.template-scroll {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding-bottom: 6px;
+  gap: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 4px;
 }
 
-.sidebar-hero-title {
-  font-family: var(--font-serif);
-  font-size: 38px;
-  font-weight: 400;
-  line-height: 1.15;
+.template-pill {
+  border: 1.5px solid var(--ui-panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  background: var(--ui-input-bg);
   color: var(--ui-text-bright);
-  margin: 0;
-  letter-spacing: -0.5px;
-}
-
-.sidebar-hero-desc {
-  font-family: var(--font-sans);
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--ui-text-muted);
-  margin: 0;
-}
-
-.btn-need-to-say {
-  align-self: flex-start;
-  background: var(--ui-btn-secondary-bg);
-  color: var(--ui-text-bright);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 9999px;
-  padding: 8px 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-size: 13.5px;
   font-weight: 500;
-  cursor: pointer;
   transition: var(--transition-smooth);
-  margin-top: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  text-align: left;
 }
-.btn-need-to-say:hover {
-  background: var(--ui-btn-secondary-hover);
+.template-pill:hover {
+  transform: translateX(3px);
+  border-color: rgba(180, 69, 90, 0.45);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+.template-pill.active {
   border-color: var(--rose);
-  color: #FFFFFF !important;
-  transform: translateY(-1px);
+  background: rgba(180, 69, 90, 0.18);
+  font-weight: 600;
+  box-shadow: 0 0 16px rgba(180, 69, 90, 0.3);
 }
 
-.sidebar-section-serif {
-  font-family: var(--font-serif);
-  font-size: 26px;
-  font-weight: 400;
-  color: var(--ui-text-bright);
-  margin: 0 0 12px;
-  letter-spacing: -0.3px;
-}
-
-/* ============================================
-   PAPER STATIONERY GALLERY (Horizontal Mini Preview Cards)
-   ============================================ */
-
-.paper-gallery-row {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding-bottom: 8px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(180, 69, 90, 0.3) transparent;
-  -webkit-overflow-scrolling: touch;
-}
-.paper-gallery-row::-webkit-scrollbar {
-  height: 5px;
-}
-.paper-gallery-row::-webkit-scrollbar-thumb {
-  background: rgba(180, 69, 90, 0.3);
-  border-radius: 10px;
-}
-
-.paper-card-btn {
-  background: transparent;
-  border: none;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
+.template-pill-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
   flex-shrink: 0;
-  width: 82px;
-  transition: transform 0.2s var(--ease-spring);
-}
-.paper-card-btn:hover {
-  transform: translateY(-2px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
 }
 
-.mini-paper-preview {
-  width: 78px;
-  height: 104px;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-  padding: 10px 8px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  position: relative;
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+.template-pill-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--ui-text-bright);
 }
 
-.paper-card-btn.active .mini-paper-preview {
-  box-shadow: 0 0 0 2.5px var(--rose), 0 6px 18px rgba(180, 69, 90, 0.35);
-}
-
-.mini-paper-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-.mini-paper-lines span {
-  height: 1.5px;
-  width: 100%;
-  border-radius: 1px;
-  display: block;
-}
-
-.paper-card-name {
-  font-family: var(--font-sans);
+.template-pill-hindi {
+  font-family: var(--font-kalam);
   font-size: 13px;
   font-weight: 600;
-  color: var(--ui-text-bright);
-  margin-top: 6px;
-  text-align: center;
-  white-space: nowrap;
-}
-
-.paper-card-hindi {
-  font-family: var(--font-kalam);
-  font-size: 11.5px;
-  color: var(--ui-text-muted);
-  text-align: center;
-  line-height: 1.1;
-  white-space: nowrap;
-}
-
-/* Mini borders matching real stationery papers */
-.mini-border-airmail {
-  border: 4px solid transparent;
-  border-image: repeating-linear-gradient(
-    -45deg,
-    #B4455A 0, #B4455A 4px,
-    transparent 4px, transparent 7px,
-    #3E5C8A 7px, #3E5C8A 11px,
-    transparent 11px, transparent 14px
-  ) 4;
-}
-.mini-border-rose {
-  border: 2px solid #E8CCD2;
-}
-.mini-border-stars {
-  border: 1.5px solid rgba(250, 216, 137, 0.6);
-  box-shadow: inset 0 0 10px rgba(62, 92, 138, 0.45);
-}
-.mini-border-botanical {
-  border: 2px solid #CAD9C7;
-}
-.mini-border-stitched {
-  border: 1.5px dashed #B8A287;
-}
-.mini-border-vintage {
-  border: 2px double #C4B294;
-}
-.mini-border-slate {
-  border: 3.5px solid #3E5C8A;
-}
-.mini-border-simple {
-  border: 1.5px solid rgba(0, 0, 0, 0.12);
+  color: #F0E8DC;
+  opacity: 0.95;
 }
 
 /* ============================================
-   HANDWRITING FONT PILLS & INK SELECTOR
+   HANDWRITING FONT PICKER
    ============================================ */
 
-.font-ink-controls-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section-label-clean {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ui-text-bright);
-  margin-bottom: 10px;
-}
-
-.font-pill-row {
-  display: flex;
+.font-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
-.font-pill-card {
-  flex: 1 1 calc(33.333% - 6px);
-  min-width: 90px;
-  background: var(--ui-input-bg);
+.font-btn {
   border: 1.5px solid var(--ui-panel-border);
-  border-radius: 20px;
-  padding: 8px 10px;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--ui-input-bg);
+  color: var(--ui-text-bright);
+  cursor: pointer;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+  align-items: flex-start;
+  gap: 2px;
   transition: var(--transition-smooth);
-  color: var(--ui-text-bright);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  font-size: 17px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
-.font-pill-row-hindi .font-pill-card {
-  flex: 1 1 calc(50% - 4px);
-}
-
-.font-pill-card:hover {
-  border-color: rgba(250, 216, 137, 0.5);
+.font-btn:hover {
+  border-color: rgba(180,69,90,0.45);
   transform: translateY(-1px);
 }
-
-.font-pill-card.active {
-  border-color: #FAD889;
-  background: rgba(250, 216, 137, 0.12);
-  box-shadow: 0 0 12px rgba(250, 216, 137, 0.3);
+.font-btn.active {
+  border-color: var(--rose);
+  background: rgba(180,69,90,0.18);
+  box-shadow: 0 0 14px rgba(180,69,90,0.25);
 }
-
-.font-pill-sample {
-  font-size: 16.5px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.font-pill-label {
+.font-btn-label {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   color: var(--ui-text-muted);
-  margin-top: 2px;
-  white-space: nowrap;
+  text-transform: uppercase;
 }
 
-/* Ink row & swatches */
-.ink-selector-bar {
+/* ============================================
+   INK SWATCHES
+   ============================================ */
+
+.ink-row {
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.btn-paper-own-ink {
-  background: var(--ui-input-bg);
-  border: 1.5px solid var(--ui-panel-border);
-  border-radius: 9999px;
-  padding: 5px 14px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--ui-text-bright);
-  cursor: pointer;
-  transition: var(--transition-smooth);
-  white-space: nowrap;
-}
-.btn-paper-own-ink:hover {
-  border-color: #FAD889;
-  transform: translateY(-1px);
-}
-.btn-paper-own-ink.active {
-  border-color: #FAD889;
-  color: #FAD889;
-  background: rgba(250, 216, 137, 0.12);
-}
-
-.ink-swatches-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.ink-swatch-circle {
+.ink-swatch {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.4);
+  border: 2.5px solid rgba(255,255,255,0.6);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.28);
   cursor: pointer;
   transition: transform 0.2s var(--ease-spring), box-shadow 0.2s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
   flex-shrink: 0;
 }
-.ink-swatch-circle:hover {
-  transform: scale(1.22);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
-}
-.ink-swatch-circle.active {
+.ink-swatch:hover { transform: scale(1.22); box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+.ink-swatch.active {
   transform: scale(1.28);
   outline: 2.5px solid var(--rose);
   outline-offset: 2px;
-  box-shadow: 0 4px 12px rgba(180, 69, 90, 0.45);
+  box-shadow: 0 4px 12px rgba(180,69,90,0.45);
 }
 
-/* Ruled lines toggle bar */
-.ruled-toggle-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 4px;
-}
-.btn-ruled-toggle {
-  background: var(--ui-btn-secondary-bg);
-  color: var(--ui-text-bright);
-  border: 1px solid var(--ui-panel-border);
+/* Paper's own swatch pill */
+.ink-own-btn {
+  border: 2px solid var(--ui-panel-border);
   border-radius: 9999px;
   padding: 5px 14px;
-  font-size: 12.5px;
-  font-weight: 600;
+  background: var(--ui-input-bg);
+  color: var(--ui-text-bright);
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
   transition: var(--transition-smooth);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
 }
-.btn-ruled-toggle:hover {
-  background: var(--ui-btn-secondary-hover);
+.ink-own-btn.active {
   border-color: var(--rose);
+  color: var(--rose);
 }
-.btn-ruled-toggle.active {
-  background: var(--rose);
-  color: #FFFFFF !important;
-  border-color: transparent;
+.ink-own-btn:hover { border-color: var(--rose); }
+
+/* ============================================
+   CONTROLS CARD (legacy compat)
+   ============================================ */
+
+.controls-card {
+  background: var(--controls-bg);
+  border: 1px solid var(--ui-panel-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 /* ============================================
-   STICKERS AND STAMPS CARD (Matching reference media_1790607376417.png)
+   STICKER SECTION INSIDE SIDEBAR
    ============================================ */
 
-.stickers-stamps-card {
+.sticker-section {
   background: var(--ui-panel-bg);
   border: 1px solid var(--ui-panel-border);
-  border-radius: 18px;
-  padding: 18px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.1);
 }
 
-.stickers-card-title {
-  font-family: var(--font-serif);
-  font-size: 24px;
-  font-weight: 400;
+.sticker-section-header {
+  padding: 16px 18px 12px;
+  background: var(--drawer-header-bg);
+  border-bottom: 1px solid var(--ui-panel-border);
+}
+
+.sticker-section-title {
+  font-size: 15px;
+  font-weight: 700;
   color: var(--ui-text-bright);
-  margin: 0;
-  letter-spacing: -0.3px;
+  margin: 0 0 2px;
 }
 
-.sticker-cat-pill-tabs {
-  display: flex;
-  gap: 6px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 2px;
-}
-.sticker-cat-pill-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.sticker-cat-pill {
-  background: var(--ui-btn-secondary-bg);
-  color: var(--ui-text-muted);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 9999px;
-  padding: 5px 12px;
+.sticker-section-sub {
+  font-family: var(--font-kalam);
   font-size: 12px;
-  font-weight: 500;
+  color: var(--ui-text-muted);
+}
+
+.sticker-cat-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 10px 12px 0;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--ui-panel-border);
+}
+.sticker-cat-tabs::-webkit-scrollbar { display: none; }
+
+.sticker-cat-tab {
+  padding: 7px 12px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--tab-inactive-color);
   cursor: pointer;
   white-space: nowrap;
-  transition: var(--transition-smooth);
+  border-bottom: 2.5px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+  border-radius: 0;
 }
-.sticker-cat-pill:hover {
+.sticker-cat-tab:hover { color: var(--ui-text-bright); }
+.sticker-cat-tab.active {
+  color: var(--rose);
+  border-bottom-color: var(--rose);
+}
+
+.sticker-cat-label-hindi {
+  font-family: var(--font-kalam);
+  font-size: 11px;
+  display: block;
   color: var(--ui-text-bright);
-  background: var(--ui-btn-secondary-hover);
-}
-.sticker-cat-pill.active {
-  background: var(--rose);
-  color: #FFFFFF !important;
-  border-color: transparent;
-  font-weight: 600;
+  opacity: 0.92;
 }
 
-.sticker-subcat-header {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ui-text-muted);
-  margin-top: 2px;
-}
-
-.sticker-square-grid {
+.sticker-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+  padding: 12px;
 }
 
-.sticker-square-btn {
+.sticker-preview-btn {
   background: var(--sticker-btn-bg);
   border: 1px solid var(--ui-panel-border);
   border-radius: 12px;
   aspect-ratio: 1;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform 0.2s var(--ease-spring), border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s var(--ease-spring), border-color 0.2s ease, background 0.2s ease;
   position: relative;
   overflow: hidden;
 }
-.sticker-square-btn:hover {
+.sticker-preview-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(180,69,90,0);
+  border-radius: 12px;
+  transition: background 0.2s ease;
+}
+.sticker-preview-btn:hover {
   transform: scale(1.1);
   border-color: var(--rose);
-  box-shadow: 0 4px 14px rgba(180, 69, 90, 0.35);
+  box-shadow: 0 4px 16px rgba(180,69,90,0.25);
+}
+.sticker-preview-btn:hover::after {
+  background: rgba(180,69,90,0.08);
 }
 
-.sticker-icon-wrapper {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.sticker-card-footer {
-  font-size: 11.5px;
-  color: var(--ui-text-muted);
+.sticker-tip {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ui-text-bright);
   text-align: center;
-  font-style: italic;
-  padding-top: 6px;
   border-top: 1px solid var(--ui-panel-border);
+  background: var(--drawer-header-bg);
+  font-style: italic;
 }
 
 /* ============================================
-   TOP STICKER TOOLBAR ABOVE LETTER SHEET
-   (Matching reference layout media_1790607353509.png)
+   RULED LINES TOGGLE
    ============================================ */
 
-.desk-top-toolbar {
-  margin-bottom: 16px;
+.ruled-toggle-row {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.sticker-desk-hint {
-  font-size: 13.5px;
-  color: var(--ui-text-muted);
-  margin: 0;
-}
-
-.top-sticker-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
   align-items: center;
-}
-
-.btn-sticker-action {
-  background: var(--ui-btn-secondary-bg);
-  color: var(--ui-text-bright);
-  border: 1px solid var(--ui-panel-border);
-  border-radius: 9999px;
-  padding: 6px 14px;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: var(--transition-smooth);
-  white-space: nowrap;
-}
-.btn-sticker-action:hover:not(:disabled) {
-  background: var(--ui-btn-secondary-hover);
-  border-color: var(--rose);
-  color: #FFFFFF !important;
-  transform: translateY(-1px);
-}
-.btn-sticker-action:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-.btn-sticker-remove:hover:not(:disabled) {
-  background: #B4455A !important;
-  border-color: #B4455A !important;
-  color: #FFFFFF !important;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 /* ============================================
