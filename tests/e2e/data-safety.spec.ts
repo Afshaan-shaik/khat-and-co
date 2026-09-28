@@ -117,8 +117,46 @@ test.describe('Data Safety & Persistence Suite', () => {
       await page.goto(`/#l=${shareUrl}`);
       await waitForPageReady(page);
       // Envelope modal should open
-      await expect(page.locator('.env-envelope')).toBeVisible();
+      await expect(page.locator('.envelope-modal-backdrop')).toBeVisible();
     }
+
+    verifyErrors();
+  });
+
+  test('resolves and opens short link (?id=...) into envelope reading mode', async ({ page }) => {
+    const verifyErrors = attachErrorListeners(page);
+
+    // Mock bytebin request for offline deterministic e2e test
+    await page.route('**/testShort123', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: 'Short Link Recipient',
+          date: 'September 28, 2026',
+          greeting: 'Hey Dearest,',
+          body: 'This is a short link test letter.',
+          signoff: 'With Love,',
+          sender: 'Shorty',
+          templateId: 'airmail-classic',
+          fontId: 'caveat',
+          inkColor: '#1F2340',
+          ruledLines: true,
+          stickers: []
+        })
+      });
+    });
+
+    await page.goto('/?id=testShort123');
+    await waitForPageReady(page);
+
+    // Envelope modal should open and display recipient
+    await expect(page.locator('.envelope-modal-backdrop')).toBeVisible();
+    await expect(page.getByText('Short Link Recipient')).toBeVisible();
 
     verifyErrors();
   });

@@ -91,7 +91,7 @@ test.describe('End-to-End User Smoke Flows', () => {
     // 7. Reader Preview modal & wax seal opening
     const previewBtn = page.getByRole('button', { name: /reader preview|preview/i });
     await previewBtn.click();
-    const envelopeModal = page.locator('.env-envelope, [role="dialog"]');
+    const envelopeModal = page.locator('.envelope-modal-backdrop');
     await expect(envelopeModal).toBeVisible();
 
     // Tap wax seal to open envelope

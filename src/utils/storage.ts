@@ -62,15 +62,21 @@ export function createDefaultLetter(): LetterData {
   };
 }
 
+export function sanitizeLoadedLetter(raw: any): LetterData {
+  if (!raw || typeof raw !== 'object') return createDefaultLetter();
+  return {
+    ...createDefaultLetter(),
+    ...raw,
+    stickers: Array.isArray(raw.stickers) ? raw.stickers : []
+  };
+}
+
 export function loadSavedDraft(): LetterData {
   try {
     const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (!raw) return createDefaultLetter();
     const parsed = JSON.parse(raw);
-    return {
-      ...createDefaultLetter(),
-      ...parsed
-    };
+    return sanitizeLoadedLetter(parsed);
   } catch (err) {
     console.warn('Could not load draft from localStorage', err);
     return createDefaultLetter();

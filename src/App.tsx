@@ -8,7 +8,8 @@ import {
   createDefaultLetter,
   getFormattedToday
 } from './utils/storage';
-import { encodeLetterToHash, decodeLetterFromHash } from './utils/codec';
+import { encodeLetterToHash } from './utils/codec';
+import { createShortShareUrl, resolveSharedLetter } from './utils/shortLink';
 import { exportLetterAsPicture } from './utils/export';
 import { PAPER_TEMPLATES } from './constants/templates';
 import { StickerDefinition } from './constants/stickers';
@@ -72,23 +73,29 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [letter]);
 
-  // Check URL Hash for shared letter on load & on hash change
+  // Check URL Hash & Search Query for shared letter on load & on change
   useEffect(() => {
-    const checkHash = () => {
+    let cancelled = false;
+
+    const checkShared = async () => {
       const hash = window.location.hash;
-      if (hash && (hash.startsWith('#l=') || hash.length > 5)) {
-        const decoded = decodeLetterFromHash(hash);
-        if (decoded) {
-          setRecipientLetter(decoded);
-          setIsRecipientFlow(true);
-          setIsEnvelopeOpen(true);
-        }
+      const search = window.location.search;
+      if (!hash && !search) return;
+
+      const decoded = await resolveSharedLetter(hash, search);
+      if (decoded && !cancelled) {
+        setRecipientLetter(decoded);
+        setIsRecipientFlow(true);
+        setIsEnvelopeOpen(true);
       }
     };
 
-    checkHash();
-    window.addEventListener('hashchange', checkHash);
-    return () => window.removeEventListener('hashchange', checkHash);
+    checkShared();
+    window.addEventListener('hashchange', checkShared);
+    return () => {
+      cancelled = true;
+      window.removeEventListener('hashchange', checkShared);
+    };
   }, []);
 
   // Handlers for Letter Updates
@@ -143,25 +150,39 @@ export const App: React.FC = () => {
     showToast(`Added "${stickerDef.name}" to letter. You can drag and position it!`);
   };
 
-  // Share Letter Link
+  // Share Letter Link (Ultra-short, WhatsApp & Messenger friendly)
   const handleShareLink = async () => {
-    const encoded = encodeLetterToHash(letter);
-    if (!encoded) {
-      showToast('Could not generate share link. Please try again.');
-      return;
-    }
-
-    const shareUrl = `${window.location.origin}${window.location.pathname}#l=${encoded}`;
+    showToast('✉️ Creating short link...');
 
     try {
+      const shareUrl = await createShortShareUrl(letter);
+
+      // On mobile devices, offer native Web Share if supported
+      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile && navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Khath & Co. — Letters for the people you miss',
+            text: 'I wrote a letter for you on Khath & Co. Open it with the wax seal:',
+            url: shareUrl
+          });
+          showToast('✉️ Letter shared successfully!');
+          return;
+        } catch (err: any) {
+          if (err.name === 'AbortError') return;
+        }
+      }
+
+      // Copy clean short URL to clipboard
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(shareUrl);
-        showToast('✉️ Share link copied to clipboard! Send it to your loved one.');
+        showToast('✉️ Short link copied! Ready to paste and send.');
       } else {
-        prompt('Copy this letter link to share:', shareUrl);
+        prompt('Copy this short letter link to share:', shareUrl);
       }
     } catch {
-      prompt('Copy this letter link to share:', shareUrl);
+      const fallbackUrl = `${window.location.origin}${window.location.pathname}#l=${encodeLetterToHash(letter)}`;
+      prompt('Copy this letter link to share:', fallbackUrl);
     }
   };
 

@@ -184,7 +184,7 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
 
           {/* Envelope Card */}
           <div
-            className={`envelope-card ${isOpening ? 'envelope-opened' : ''}`}
+            className={`envelope-card env-envelope ${isOpening ? 'envelope-opened' : ''}`}
             style={{ maxWidth: '520px', width: '100%', minHeight: '320px' }}
           >
             {/* Airmail dashed frame */}
