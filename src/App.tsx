@@ -466,15 +466,17 @@ export const App: React.FC = () => {
 
           {/* Footer branding with creator attribution */}
           <footer className="app-footer">
-            <div className="app-footer-content">
-              <div className="app-footer-brand">
-                <p className="app-footer-name">
-                  Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
-                </p>
-                <p className="app-footer-tagline">
-                  खत · letters for the people you miss · Free, no-login digital stationery
-                </p>
-              </div>
+            <div className="app-footer-brand">
+              <p className="app-footer-name">
+                Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+              </p>
+              <p className="app-footer-tagline">
+                खत · letters for the people you miss · Free, no-login digital stationery
+              </p>
+            </div>
+
+            {/* Creator attribution 3-4 lines down, aligned to the far right end side */}
+            <div className="app-footer-credit-row">
               <p className="app-footer-credit">
                 <span className="credit-label">with love by</span>
                 <a
