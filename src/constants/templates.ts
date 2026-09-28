@@ -1,0 +1,121 @@
+import { PaperTemplate } from '../types/letter';
+
+export const PAPER_TEMPLATES: PaperTemplate[] = [
+  {
+    id: 'airmail-classic',
+    name: 'Airmail Classic',
+    nameHindi: 'डाक खत',
+    description: 'Crisp cream paper with vintage red & blue airmail borders',
+    paperBg: '#F8F3EA',
+    paperBorder: '4px solid #1F2340',
+    borderType: 'airmail',
+    ruledColor: '#D9CDBC',
+    defaultInk: '#1F2340',
+    isDarkPaper: false,
+    accentColor: '#3E5C8A'
+  },
+  {
+    id: 'blush-romance',
+    name: 'Blush Romance',
+    nameHindi: 'गुलाबी खत',
+    description: 'Tender rose-tinted vellum with soft pink ruled lines',
+    paperBg: '#FDF6F6',
+    paperBorder: '2px solid #E8CCD2',
+    borderType: 'rose-gold',
+    ruledColor: '#E8CCD2',
+    defaultInk: '#7A2838',
+    isDarkPaper: false,
+    accentColor: '#B4455A'
+  },
+  {
+    id: 'midnight-stars',
+    name: 'Midnight Stars',
+    nameHindi: 'चाँदनी रात',
+    description: 'Deep ink-navy sky paper with golden starlight rulings',
+    paperBg: '#151829',
+    paperBorder: '1px solid rgba(250, 216, 137, 0.35)',
+    borderType: 'stars',
+    ruledColor: 'rgba(250, 216, 137, 0.22)',
+    defaultInk: '#F6EFE3',
+    isDarkPaper: true,
+    accentColor: '#FAD889'
+  },
+  {
+    id: 'pressed-sage',
+    name: 'Pressed Sage',
+    nameHindi: 'हरी पत्तियाँ',
+    description: 'Calm botanical herb paper with delicate forest accents',
+    paperBg: '#EFF4EE',
+    paperBorder: '2px solid #CAD9C7',
+    borderType: 'botanical',
+    ruledColor: '#CAD9C7',
+    defaultInk: '#26422F',
+    isDarkPaper: false,
+    accentColor: '#4A6F4E'
+  },
+  {
+    id: 'lavender-mist',
+    name: 'Lavender Mist',
+    nameHindi: 'लैवेंडर सुकून',
+    description: 'Soft lavender-tinted stationery with plum ruled lines',
+    paperBg: '#F4F0F9',
+    paperBorder: '2px solid #D9D0E7',
+    borderType: 'simple',
+    ruledColor: '#D9D0E7',
+    defaultInk: '#48203E',
+    isDarkPaper: false,
+    accentColor: '#8462A0'
+  },
+  {
+    id: 'kraft-paper',
+    name: 'Earthy Kraft',
+    nameHindi: 'खादी कागज़',
+    description: 'Warm textured raw craft paper with stitched borders',
+    paperBg: '#E7D8C2',
+    paperBorder: '2px dashed #B8A287',
+    borderType: 'stitched',
+    ruledColor: '#CBB89F',
+    defaultInk: '#3B291D',
+    isDarkPaper: false,
+    accentColor: '#8C6843'
+  },
+  {
+    id: 'vintage-parchment',
+    name: 'Vintage Parchment',
+    nameHindi: 'पुरानी चिट्ठी',
+    description: 'Aged antique manuscript with deckled antique corners',
+    paperBg: '#F5EEDB',
+    paperBorder: '3px double #C4B294',
+    borderType: 'vintage',
+    ruledColor: '#D4C4A8',
+    defaultInk: '#33271C',
+    isDarkPaper: false,
+    accentColor: '#967B54'
+  },
+  {
+    id: 'dusk-blue',
+    name: 'Dusk Airmail',
+    nameHindi: 'सांझ की चिट्ठी',
+    description: 'Moody ocean twilight with calm slate rulings',
+    paperBg: '#E2E8F0',
+    paperBorder: '2px solid #C1CCDC',
+    borderType: 'slate',
+    ruledColor: '#C1CCDC',
+    defaultInk: '#243C66',
+    isDarkPaper: false,
+    accentColor: '#3E5C8A'
+  },
+  {
+    id: 'terracotta-warmth',
+    name: 'Warm Chai',
+    nameHindi: 'मिट्टी की खुशबू',
+    description: 'Warm earthen cup hue with cinnamon spice lines',
+    paperBg: '#F8EFE4',
+    paperBorder: '2px solid #DECBB6',
+    borderType: 'simple',
+    ruledColor: '#DECBB6',
+    defaultInk: '#462512',
+    isDarkPaper: false,
+    accentColor: '#A85D35'
+  }
+];
