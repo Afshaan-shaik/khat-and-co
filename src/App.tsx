@@ -475,17 +475,17 @@ export const App: React.FC = () => {
               </p>
             </div>
 
-            {/* Creator attribution 3-4 lines down, aligned to the far right end side */}
+            {/* Creator attribution 4-5 lines down, aligned to the far right end side */}
             <div className="app-footer-credit-row">
               <p className="app-footer-credit">
-                <span className="credit-label">with love by</span>
+                <span className="credit-label">crafted by -</span>
                 <a
                   href="https://github.com/Afshaan-shaik"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="app-footer-author"
                   title="Afshaan Shaik on GitHub"
-                  aria-label="With love by Afshaan Shaik (opens GitHub profile)"
+                  aria-label="Crafted by Afshaan Shaik (opens GitHub profile)"
                 >
                   Afshaan Shaik
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ opacity: 0.85 }}>

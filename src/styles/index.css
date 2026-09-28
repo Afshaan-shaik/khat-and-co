@@ -1495,9 +1495,11 @@ select {
    ============================================ */
 
 .app-footer {
-  padding: 32px 24px 20px;
+  width: 100%;
+  max-width: 760px;
+  padding: 36px 0 24px;
   border-top: 1px solid var(--ui-panel-border);
-  margin-top: auto;
+  margin: auto auto 0;
 }
 
 .app-footer-brand {
@@ -1522,8 +1524,8 @@ select {
 .app-footer-credit-row {
   display: flex;
   justify-content: flex-end;
-  margin-top: 36px;
-  padding-top: 4px;
+  margin-top: 56px;
+  padding-top: 6px;
   width: 100%;
 }
 
@@ -1558,13 +1560,13 @@ select {
   text-decoration: underline;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 767px) {
   .app-footer {
-    padding: 24px 16px 16px;
+    padding: 28px 12px 18px;
   }
 
   .app-footer-credit-row {
-    margin-top: 24px;
+    margin-top: 36px;
     justify-content: flex-end;
   }
 }
