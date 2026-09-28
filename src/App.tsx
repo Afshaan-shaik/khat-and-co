@@ -8,8 +8,9 @@ import {
   createDefaultLetter,
   getFormattedToday
 } from './utils/storage';
-import { encodeLetterToHash } from './utils/codec';
+import { encodeLetterToHash, decodeLetterFromHash } from './utils/codec';
 import { createShortShareUrl, resolveSharedLetter } from './utils/shortLink';
+import { copyTextToClipboard } from './utils/clipboard';
 import { exportLetterAsPicture } from './utils/export';
 import { PAPER_TEMPLATES } from './constants/templates';
 import { StickerDefinition } from './constants/stickers';
@@ -23,22 +24,60 @@ import { StickerDrawer } from './components/StickerDrawer';
 import { EnvelopeModal } from './components/EnvelopeModal';
 import { PromptModal } from './components/PromptModal';
 
+/**
+ * Checks synchronously whether the current URL is a shared letter link.
+ * Matches ?id=..., #id=..., and standalone hash payloads #l=... or raw hashes.
+ */
+function hasIncomingShare(): boolean {
+  if (typeof window === 'undefined') return false;
+  const search = window.location.search || '';
+  const hash = window.location.hash || '';
+  return Boolean(
+    search.includes('id=') ||
+    hash.startsWith('#id=') ||
+    hash.startsWith('#l=') ||
+    (hash.length > 5 && !hash.startsWith('#id='))
+  );
+}
+
+/**
+ * Synchronously decodes letter payload from hash if available on initial render.
+ */
+function getInitialRecipientLetter(): LetterData | null {
+  if (typeof window === 'undefined') return null;
+  const hash = window.location.hash || '';
+  if (hash.startsWith('#l=') || (hash.length > 5 && !hash.startsWith('#id='))) {
+    try {
+      return decodeLetterFromHash(hash);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export const App: React.FC = () => {
   // Theme state
   const [theme, setTheme] = useState<'dark' | 'light'>(loadThemePreference);
 
-  // Active Draft Letter state
+  // Active Draft Letter state for author desk
   const [letter, setLetter] = useState<LetterData>(loadSavedDraft);
 
-  // Recipient Received Letter state (from URL hash)
-  const [recipientLetter, setRecipientLetter] = useState<LetterData | null>(null);
+  // Recipient Received Letter state (from URL hash or query)
+  const [recipientLetter, setRecipientLetter] = useState<LetterData | null>(getInitialRecipientLetter);
 
   // Mobile active tab ('write' | 'paper' | 'stickers')
   const [mobileTab, setMobileTab] = useState<'write' | 'paper' | 'stickers'>('write');
 
-  // Modals & Drawers state
-  const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(false);
-  const [isRecipientFlow, setIsRecipientFlow] = useState(false);
+  // Recipient Flow state: strictly true from frame 0 if opened via share link
+  const [isRecipientFlow, setIsRecipientFlow] = useState<boolean>(hasIncomingShare);
+  const [isEnvelopeOpen, setIsEnvelopeOpen] = useState<boolean>(hasIncomingShare);
+  const [isLoadingSharedLetter, setIsLoadingSharedLetter] = useState<boolean>(() => {
+    return hasIncomingShare() && !getInitialRecipientLetter();
+  });
+  const [sharedLetterError, setSharedLetterError] = useState<boolean>(false);
+
+  // Modals state
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -73,20 +112,39 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [letter]);
 
-  // Check URL Hash & Search Query for shared letter on load & on change
+  // Check URL Hash & Search Query for shared letter on load & on hashchange
   useEffect(() => {
     let cancelled = false;
 
     const checkShared = async () => {
       const hash = window.location.hash;
       const search = window.location.search;
-      if (!hash && !search) return;
+      if (!hash && !search) {
+        setIsRecipientFlow(false);
+        return;
+      }
 
-      const decoded = await resolveSharedLetter(hash, search);
-      if (decoded && !cancelled) {
-        setRecipientLetter(decoded);
-        setIsRecipientFlow(true);
-        setIsEnvelopeOpen(true);
+      setIsLoadingSharedLetter(true);
+      setSharedLetterError(false);
+
+      try {
+        const decoded = await resolveSharedLetter(hash, search);
+        if (cancelled) return;
+
+        if (decoded) {
+          setRecipientLetter(decoded);
+          setIsRecipientFlow(true);
+          setIsEnvelopeOpen(true);
+          setIsLoadingSharedLetter(false);
+        } else {
+          setIsLoadingSharedLetter(false);
+          setSharedLetterError(true);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setIsLoadingSharedLetter(false);
+          setSharedLetterError(true);
+        }
       }
     };
 
@@ -173,35 +231,36 @@ export const App: React.FC = () => {
   const handleShareLink = async () => {
     showToast('✉️ Creating short link...');
 
+    let shareUrl = '';
     try {
-      const shareUrl = await createShortShareUrl(letter);
-
-      // On mobile devices, offer native Web Share if supported
-      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      if (isMobile && navigator.share) {
-        try {
-          await navigator.share({
-            title: 'Khath & Co. — Letters for the people you miss',
-            text: 'I wrote a letter for you on Khath & Co. Open it with the wax seal:',
-            url: shareUrl
-          });
-          showToast('✉️ Letter shared successfully!');
-          return;
-        } catch (err: any) {
-          if (err.name === 'AbortError') return;
-        }
-      }
-
-      // Copy clean short URL to clipboard
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast('✉️ Short link copied! Ready to paste and send.');
-      } else {
-        prompt('Copy this short letter link to share:', shareUrl);
-      }
+      shareUrl = await createShortShareUrl(letter);
     } catch {
-      const fallbackUrl = `${window.location.origin}${window.location.pathname}#l=${encodeLetterToHash(letter)}`;
-      prompt('Copy this letter link to share:', fallbackUrl);
+      const base = `${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/`;
+      shareUrl = `${base}#l=${encodeLetterToHash(letter)}`;
+    }
+
+    // On mobile devices, offer native Web Share if supported
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile && navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Khath & Co. — Letters for the people you miss',
+          text: 'I wrote a letter for you on Khath & Co. Open it with the wax seal:',
+          url: shareUrl
+        });
+        showToast('✉️ Letter shared successfully!');
+        return;
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // Copy clean short URL to clipboard with fallback
+    const copied = await copyTextToClipboard(shareUrl);
+    if (copied) {
+      showToast('✉️ Short link copied! Ready to paste and send.');
+    } else {
+      prompt('Copy your short letter link to share:', shareUrl);
     }
   };
 
@@ -283,6 +342,7 @@ export const App: React.FC = () => {
 
     window.history.replaceState(null, '', window.location.pathname);
     setIsEnvelopeOpen(false);
+    setIsRecipientFlow(false);
     setRecipientLetter(null);
     showToast(`Started reply to ${senderName || 'your friend'}!`);
   };
@@ -290,8 +350,9 @@ export const App: React.FC = () => {
   const handleCloseEnvelope = () => {
     setIsEnvelopeOpen(false);
     if (isRecipientFlow) {
-      window.history.replaceState(null, '', window.location.pathname);
+      setIsRecipientFlow(false);
       setRecipientLetter(null);
+      window.history.replaceState(null, '', window.location.pathname);
     }
   };
 
@@ -299,204 +360,214 @@ export const App: React.FC = () => {
     PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
 
   return (
-    <div className="app-shell">
-      {/* Sticky Header with non-truncated brand identity and responsive action bar */}
-      <Header
-        theme={theme}
-        onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        onOpenPrompt={() => setIsPromptOpen(true)}
-        onPreviewEnvelope={handlePreviewEnvelope}
-        onShareLink={handleShareLink}
-        onSavePicture={handleSavePicture}
-        isExporting={isExporting}
-      />
-
-      {/* Mobile Tab Bar (< 960px) */}
-      <nav className="mobile-tab-bar d-flex d-md-none" aria-label="Mobile navigation tabs">
-        <button
-          type="button"
-          className={`mobile-tab-btn ${mobileTab === 'paper' ? 'active' : ''}`}
-          onClick={() => setMobileTab('paper')}
-        >
-          Paper &amp; Ink
-        </button>
-        <button
-          type="button"
-          className={`mobile-tab-btn ${mobileTab === 'write' ? 'active' : ''}`}
-          onClick={() => setMobileTab('write')}
-        >
-          Write Letter
-        </button>
-        <button
-          type="button"
-          className={`mobile-tab-btn ${mobileTab === 'stickers' ? 'active' : ''}`}
-          onClick={() => setMobileTab('stickers')}
-        >
-          Stickers ({letter.stickers.length})
-        </button>
-      </nav>
-
-      {/* Two-column workspace: left panel and right stage ending on the exact same baseline */}
-      <div className="workspace-layout">
-
-        {/* ── LEFT SIDEBAR PANEL ── */}
-        <aside
-          className={`sidebar-panel ${mobileTab !== 'write' ? 'mobile-visible' : ''}`}
-          data-testid="left-panel"
-          aria-label="Letter customization panel"
-        >
-
-          {/* Paper Stationery Picker */}
-          <section
-            className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
-            aria-labelledby="paper-section-label"
-          >
-            <div className="section-label" id="paper-section-label">
-              <span>Paper</span>
-            </div>
-            <TemplatePicker
-              selectedTemplateId={letter.templateId}
-              onSelectTemplate={handleSelectTemplate}
-            />
-          </section>
-
-          {/* Handwriting Font & Ink Picker */}
-          <section
-            className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
-            aria-labelledby="font-section-label"
-          >
-            <FontPicker
-              selectedFontId={letter.fontId}
-              onSelectFont={handleSelectFont}
-              selectedInk={letter.inkColor}
-              onSelectInk={handleSelectInk}
-              isDarkPaper={currentTemplate.isDarkPaper}
-              ruledLines={letter.ruledLines}
-              onToggleRuledLines={handleToggleRuledLines}
-            />
-          </section>
-
-          {/* Sticker & Stamp Collection (Docked at the bottom) */}
-          <section
-            className={`sidebar-section sticker-docked-section ${mobileTab === 'paper' ? 'd-none d-md-block' : ''}`}
-            aria-labelledby="sticker-section-label"
-          >
-            <div className="section-label" id="sticker-section-label">
-              <span>Stickers &amp; Stamps</span>
-            </div>
-            <StickerDrawer
-              onAddSticker={handleAddSticker}
-              stickerCount={letter.stickers.length}
-              inlineSidebar
-            />
-          </section>
-
-        </aside>
-
-        {/* ── RIGHT STAGE DESK (Letter sheet + Actions at the ending of the letter) ── */}
-        <main
-          className={`editor-column ${mobileTab === 'write' ? 'mobile-visible' : ''}`}
-          data-testid="stage"
-          aria-label="Letter writing area"
-        >
-          <LetterEditor
-            letter={letter}
-            onChangeLetter={handleUpdateLetter}
-            letterSheetRef={letterSheetRef}
+    <div className={`app-shell ${isRecipientFlow ? 'recipient-mode' : ''}`}>
+      {/* 
+        CRITICAL RECIPIENT FLOW GUARANTEE:
+        When a recipient opens a shared letter link, the author desk, header, and 
+        workspace are NEVER rendered. This ensures ZERO preview/spoiler flash.
+        The recipient sees ONLY the closed, sealed envelope with the wax seal.
+      */}
+      {!isRecipientFlow && (
+        <>
+          {/* Sticky Header with non-truncated brand identity and responsive action bar */}
+          <Header
+            theme={theme}
+            onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            onOpenPrompt={() => setIsPromptOpen(true)}
+            onPreviewEnvelope={handlePreviewEnvelope}
+            onShareLink={handleShareLink}
+            onSavePicture={handleSavePicture}
+            isExporting={isExporting}
           />
 
-          {/* Desk Actions — Ending of the letter matching uploaded web page reference */}
-          <div className="desk-actions" role="toolbar" aria-label="Letter actions">
+          {/* Mobile Tab Bar (< 960px) */}
+          <nav className="mobile-tab-bar d-flex d-md-none" aria-label="Mobile navigation tabs">
             <button
               type="button"
-              className="btn-khat-primary"
-              onClick={handleSavePicture}
-              disabled={isExporting}
-              title="Save the finished letter as a picture"
+              className={`mobile-tab-btn ${mobileTab === 'paper' ? 'active' : ''}`}
+              onClick={() => setMobileTab('paper')}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-              <span>{isExporting ? 'Saving...' : 'Save as picture'}</span>
+              Paper &amp; Ink
             </button>
-
             <button
               type="button"
-              className="btn-khat-secondary"
-              onClick={handlePreviewEnvelope}
-              title="See it as your reader will (Envelope View)"
+              className={`mobile-tab-btn ${mobileTab === 'write' ? 'active' : ''}`}
+              onClick={() => setMobileTab('write')}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" />
-                <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10" />
-              </svg>
-              <span>See it as your reader will</span>
+              Write Letter
             </button>
-
             <button
               type="button"
-              className="btn-khat-secondary"
-              onClick={handleShareLink}
-              title="Create an envelope link to send to your loved one"
+              className={`mobile-tab-btn ${mobileTab === 'stickers' ? 'active' : ''}`}
+              onClick={() => setMobileTab('stickers')}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-              </svg>
-              <span>Copy share link</span>
+              Stickers ({letter.stickers.length})
             </button>
+          </nav>
 
-            <button
-              type="button"
-              className="btn-khat-secondary"
-              onClick={handleResetLetter}
-              title="Start a fresh letter"
+          {/* Two-column workspace: left panel and right stage ending on the exact same baseline */}
+          <div className="workspace-layout">
+
+            {/* ── LEFT SIDEBAR PANEL ── */}
+            <aside
+              className={`sidebar-panel ${mobileTab !== 'write' ? 'mobile-visible' : ''}`}
+              data-testid="left-panel"
+              aria-label="Letter customization panel"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                <path d="M21 3v5h-5" />
-                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                <path d="M8 16H3v5" />
-              </svg>
-              <span>Start a new letter</span>
-            </button>
-          </div>
 
-          {/* Footer branding with creator attribution */}
-          <footer className="app-footer">
-            <div className="app-footer-brand">
-              <p className="app-footer-name">
-                Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
-              </p>
-              <p className="app-footer-tagline">
-                खत · letters for the people you miss · Free, no-login digital stationery
-              </p>
-            </div>
+              {/* Paper Stationery Picker */}
+              <section
+                className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
+                aria-labelledby="paper-section-label"
+              >
+                <div className="section-label" id="paper-section-label">
+                  <span>Paper</span>
+                </div>
+                <TemplatePicker
+                  selectedTemplateId={letter.templateId}
+                  onSelectTemplate={handleSelectTemplate}
+                />
+              </section>
 
-            {/* Creator attribution 4-5 lines down, aligned to the far right end side */}
-            <div className="app-footer-credit-row">
-              <p className="app-footer-credit">
-                <span className="credit-label">crafted by -</span>
-                <a
-                  href="https://github.com/Afshaan-shaik"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="app-footer-author"
-                  title="Afshaan Shaik on GitHub"
-                  aria-label="Crafted by Afshaan Shaik (opens GitHub profile)"
+              {/* Handwriting Font & Ink Picker */}
+              <section
+                className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
+                aria-labelledby="font-section-label"
+              >
+                <FontPicker
+                  selectedFontId={letter.fontId}
+                  onSelectFont={handleSelectFont}
+                  selectedInk={letter.inkColor}
+                  onSelectInk={handleSelectInk}
+                  isDarkPaper={currentTemplate.isDarkPaper}
+                  ruledLines={letter.ruledLines}
+                  onToggleRuledLines={handleToggleRuledLines}
+                />
+              </section>
+
+              {/* Sticker & Stamp Collection (Docked at the bottom) */}
+              <section
+                className={`sidebar-section sticker-docked-section ${mobileTab === 'paper' ? 'd-none d-md-block' : ''}`}
+                aria-labelledby="sticker-section-label"
+              >
+                <div className="section-label" id="sticker-section-label">
+                  <span>Stickers &amp; Stamps</span>
+                </div>
+                <StickerDrawer
+                  onAddSticker={handleAddSticker}
+                  stickerCount={letter.stickers.length}
+                  inlineSidebar
+                />
+              </section>
+
+            </aside>
+
+            {/* ── RIGHT STAGE DESK (Letter sheet + Actions at the ending of the letter) ── */}
+            <main
+              className={`editor-column ${mobileTab === 'write' ? 'mobile-visible' : ''}`}
+              data-testid="stage"
+              aria-label="Letter writing area"
+            >
+              <LetterEditor
+                letter={letter}
+                onChangeLetter={handleUpdateLetter}
+                letterSheetRef={letterSheetRef}
+              />
+
+              {/* Desk Actions — Ending of the letter matching uploaded web page reference */}
+              <div className="desk-actions" role="toolbar" aria-label="Letter actions">
+                <button
+                  type="button"
+                  className="btn-khat-primary"
+                  onClick={handleSavePicture}
+                  disabled={isExporting}
+                  title="Save the finished letter as a picture"
                 >
-                  Afshaan Shaik
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ opacity: 0.85 }}>
-                    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
-                </a>
-              </p>
-            </div>
-          </footer>
-        </main>
-      </div>
+                  <span>{isExporting ? 'Saving...' : 'Save as picture'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-khat-secondary"
+                  onClick={handlePreviewEnvelope}
+                  title="See it as your reader will (Envelope View)"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" />
+                    <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10" />
+                  </svg>
+                  <span>See it as your reader will</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-khat-secondary"
+                  onClick={handleShareLink}
+                  title="Create an envelope link to send to your loved one"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                  </svg>
+                  <span>Copy share link</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-khat-secondary"
+                  onClick={handleResetLetter}
+                  title="Start a fresh letter"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M8 16H3v5" />
+                  </svg>
+                  <span>Start a new letter</span>
+                </button>
+              </div>
+
+              {/* Footer branding with creator attribution */}
+              <footer className="app-footer">
+                <div className="app-footer-brand">
+                  <p className="app-footer-name">
+                    Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+                  </p>
+                  <p className="app-footer-tagline">
+                    खत · letters for the people you miss · Free, no-login digital stationery
+                  </p>
+                </div>
+
+                {/* Creator attribution 4-5 lines down, aligned to the far right end side */}
+                <div className="app-footer-credit-row">
+                  <p className="app-footer-credit">
+                    <span className="credit-label">crafted by -</span>
+                    <a
+                      href="https://github.com/Afshaan-shaik"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="app-footer-author"
+                      title="Afshaan Shaik on GitHub"
+                      aria-label="Crafted by Afshaan Shaik (opens GitHub profile)"
+                    >
+                      Afshaan Shaik
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ opacity: 0.85 }}>
+                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+                      </svg>
+                    </a>
+                  </p>
+                </div>
+              </footer>
+            </main>
+          </div>
+        </>
+      )}
 
       {/* Bilingual Weekly Writing Prompts Modal */}
       <PromptModal
@@ -507,10 +578,12 @@ export const App: React.FC = () => {
       {/* Animated Envelope Reading Modal */}
       <EnvelopeModal
         isOpen={isEnvelopeOpen}
-        letter={recipientLetter || letter}
+        letter={recipientLetter || (isRecipientFlow ? null : letter)}
         onClose={handleCloseEnvelope}
         onWriteBack={handleWriteBack}
         isRecipientFlow={isRecipientFlow}
+        isLoadingLetter={isLoadingSharedLetter}
+        loadError={sharedLetterError}
       />
 
       {/* Floating Toast Notifications */}

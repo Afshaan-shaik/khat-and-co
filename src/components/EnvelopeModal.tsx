@@ -4,11 +4,13 @@ import { LetterEditor } from './LetterEditor';
 import { exportLetterAsPicture } from '../utils/export';
 
 interface EnvelopeModalProps {
-  letter: LetterData;
+  letter: LetterData | null;
   isOpen: boolean;
   onClose: () => void;
   onWriteBack: (recipientSender: string, templateId: string, fontId: string) => void;
-  isRecipientFlow?: boolean; // opened via URL hash
+  isRecipientFlow?: boolean; // opened via shared URL
+  isLoadingLetter?: boolean;
+  loadError?: boolean;
 }
 
 export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
@@ -16,7 +18,9 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
   isOpen,
   onClose,
   onWriteBack,
-  isRecipientFlow = false
+  isRecipientFlow = false,
+  isLoadingLetter = false,
+  loadError = false
 }) => {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -34,23 +38,34 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
     }
   }, [isRevealed]);
 
-  // Reset states whenever modal opens
+  // STRICT REQUIREMENT: Whenever modal opens or mounts, it MUST start strictly closed and sealed.
+  // NEVER reveal automatically on load or prefers-reduced-motion. The user MUST tap the wax seal!
   useEffect(() => {
     if (isOpen) {
-      // Check prefers-reduced-motion
-      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      if (prefersReducedMotion) {
-        setIsOpening(false);
-        setIsRevealed(true);
-      } else {
-        setIsOpening(false);
-        setIsRevealed(false);
-      }
+      setIsOpening(false);
+      setIsRevealed(false);
       if (modalBackdropRef.current) {
         modalBackdropRef.current.scrollTop = 0;
       }
     }
   }, [isOpen]);
+
+  // If user tapped the wax seal while remote letter was still loading, reveal once letter arrives
+  useEffect(() => {
+    if (isOpening && letter && !isRevealed) {
+      const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        setIsRevealed(true);
+        setIsOpening(false);
+      } else {
+        const timer = setTimeout(() => {
+          setIsRevealed(true);
+          setIsOpening(false);
+        }, 1100);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isOpening, letter, isRevealed]);
 
   // Handle escape key to close
   useEffect(() => {
@@ -65,7 +80,15 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
   if (!isOpen) return null;
 
   const handleOpenEnvelope = () => {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (loadError) return;
+
+    if (!letter) {
+      // Remote letter still loading from bytebin: indicate opening and await fetch resolution
+      setIsOpening(true);
+      return;
+    }
+
+    const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       setIsRevealed(true);
       return;
@@ -110,7 +133,7 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
       aria-label="Letter reading experience"
     >
       {/* Top action bar when letter is revealed */}
-      {isRevealed && (
+      {isRevealed && letter && (
         <div
           className="fixed-top py-2 px-3 d-flex align-items-center justify-content-between flex-wrap gap-2"
           style={{
@@ -182,7 +205,7 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
         </div>
       )}
 
-      {/* STAGE 1: FULL SCREEN ANIMATED ENVELOPE */}
+      {/* STAGE 1: FULL SCREEN ANIMATED ENVELOPE (Strictly closed and sealed until tapped) */}
       {!isRevealed && (
         <div className="envelope-view-stage">
           {/* Subtle instruction above envelope */}
@@ -196,7 +219,13 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
                 letterSpacing: '0.5px'
               }}
             >
-              {isOpening ? 'Opening letter...' : 'A digital letter sealed for you · खत तुम्हारे लिए'}
+              {loadError
+                ? 'Unable to load letter · खत नहीं मिला'
+                : (isOpening
+                    ? 'Opening letter...'
+                    : (isLoadingLetter && !letter
+                        ? 'Receiving sealed letter...'
+                        : 'A digital letter sealed for you · खत तुम्हारे लिए'))}
             </span>
           </div>
 
@@ -267,10 +296,10 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
                 TO:
               </div>
               <div className="fw-bold lh-1 mb-2" style={{ fontSize: 'clamp(20px, 4.5vw, 28px)', color: '#1F2340', lineHeight: 1.1, wordBreak: 'break-word' }}>
-                {letter.recipient || 'Dearest Friend'}
+                {letter?.recipient || 'For You'}
               </div>
               <div className="fs-5 text-muted font-sans mt-1" style={{ fontSize: '13px' }}>
-                From: <span className="font-kalam fw-bold" style={{ color: '#B4455A', fontSize: '18px' }}>{letter.sender || 'Someone who loves you'}</span>
+                From: <span className="font-kalam fw-bold" style={{ color: '#B4455A', fontSize: '18px' }}>{letter?.sender || 'Someone who loves you'}</span>
               </div>
             </div>
 
@@ -311,7 +340,7 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
             )}
 
             {/* Center Pulsing Wax Seal Button */}
-            {!isOpening && (
+            {!isOpening && !loadError && (
               <button
                 type="button"
                 className="pulsing-wax-seal"
@@ -340,24 +369,30 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
 
           {/* Help hint */}
           <div className="text-center mt-3">
-            <span className="small text-light opacity-75 font-sans">
-              Tap the rose wax seal to unseal · मोहर पर टैप करें
-            </span>
+            {loadError ? (
+              <span className="small text-danger opacity-90 font-sans">
+                This letter link might be invalid or expired.
+              </span>
+            ) : (
+              <span className="small text-light opacity-75 font-sans">
+                Tap the rose wax seal to unseal · मोहर पर टैप करें
+              </span>
+            )}
           </div>
 
-          {/* Close preview button */}
+          {/* Close / Return button */}
           <button
             type="button"
             className="btn btn-sm btn-link text-white-50 text-decoration-none mt-3"
             onClick={onClose}
           >
-            ← Return to Editor
+            {isRecipientFlow ? 'Write your own letter on Khath & Co. →' : '← Return to Editor'}
           </button>
         </div>
       )}
 
-      {/* STAGE 2: REVEALED READ-ONLY LETTER SHEET (Starts from header, fully scrollable) */}
-      {isRevealed && (
+      {/* STAGE 2: REVEALED READ-ONLY LETTER SHEET (Only after wax seal is tapped) */}
+      {isRevealed && letter && (
         <div className="w-100 envelope-revealed-container" style={{ paddingTop: '74px', paddingBottom: '60px' }}>
           <LetterEditor
             letter={letter}

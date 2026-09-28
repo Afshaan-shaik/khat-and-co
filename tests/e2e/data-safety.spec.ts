@@ -123,7 +123,7 @@ test.describe('Data Safety & Persistence Suite', () => {
     verifyErrors();
   });
 
-  test('resolves and opens short link (?id=...) into envelope reading mode', async ({ page }) => {
+  test('resolves and opens short link (?id=...) strictly closed with sealed wax first, concealing letter until tapped', async ({ page }) => {
     const verifyErrors = attachErrorListeners(page);
 
     // Mock bytebin request for offline deterministic e2e test
@@ -139,7 +139,7 @@ test.describe('Data Safety & Persistence Suite', () => {
           recipient: 'Short Link Recipient',
           date: 'September 28, 2026',
           greeting: 'Hey Dearest,',
-          body: 'This is a short link test letter.',
+          body: 'This is a short link test letter with secrets.',
           signoff: 'With Love,',
           sender: 'Shorty',
           templateId: 'airmail-classic',
@@ -154,9 +154,79 @@ test.describe('Data Safety & Persistence Suite', () => {
     await page.goto('/?id=testShort123');
     await waitForPageReady(page);
 
-    // Envelope modal should open and display recipient
+    // 1. Envelope modal MUST be open
     await expect(page.locator('.envelope-modal-backdrop')).toBeVisible();
+
+    // 2. Desk workspace MUST NOT be visible or rendered
+    await expect(page.locator('.workspace-layout')).not.toBeVisible();
+
+    // 3. Closed envelope card MUST be visible with sealed wax button
+    await expect(page.locator('.envelope-card')).toBeVisible();
+    await expect(page.locator('.pulsing-wax-seal')).toBeVisible();
+
+    // 4. Letter body MUST NOT be revealed or visible before tapping wax seal
+    await expect(page.locator('.envelope-revealed-container')).not.toBeVisible();
+    await expect(page.getByText('This is a short link test letter with secrets.')).not.toBeVisible();
+
+    // 5. Envelope front displays recipient address
     await expect(page.getByText('Short Link Recipient')).toBeVisible();
+
+    // 6. Tap the wax seal to unseal and reveal (force: true bypasses continuous pulsing animation stability check)
+    await page.locator('.pulsing-wax-seal').click({ force: true });
+
+    // 7. Letter is now revealed!
+    await expect(page.locator('.envelope-revealed-container')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('This is a short link test letter with secrets.')).toBeVisible();
+
+    verifyErrors();
+  });
+
+  test('strictly preserves sealed closed envelope on load even with prefers-reduced-motion enabled', async ({ page }) => {
+    const verifyErrors = attachErrorListeners(page);
+
+    // Emulate reduced motion
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+
+    await page.route('**/testMotion123', async (route) => {
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient: 'Motion Recipient',
+          date: 'September 28, 2026',
+          greeting: 'Hey Motion,',
+          body: 'Hidden until wax tapped.',
+          signoff: 'Always,',
+          sender: 'Motion Sender',
+          templateId: 'airmail-classic',
+          fontId: 'caveat',
+          inkColor: '#1F2340',
+          ruledLines: true,
+          stickers: []
+        })
+      });
+    });
+
+    await page.goto('/?id=testMotion123');
+    await waitForPageReady(page);
+
+    // Envelope modal is visible
+    await expect(page.locator('.envelope-modal-backdrop')).toBeVisible();
+
+    // Closed sealed envelope must be shown first (NOT revealed automatically)
+    await expect(page.locator('.pulsing-wax-seal')).toBeVisible();
+    await expect(page.locator('.envelope-revealed-container')).not.toBeVisible();
+    await expect(page.getByText('Hidden until wax tapped.')).not.toBeVisible();
+
+    // Tap wax seal
+    await page.locator('.pulsing-wax-seal').click();
+
+    // Revealed after tap
+    await expect(page.locator('.envelope-revealed-container')).toBeVisible();
+    await expect(page.getByText('Hidden until wax tapped.')).toBeVisible();
 
     verifyErrors();
   });

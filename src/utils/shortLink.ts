@@ -12,12 +12,12 @@ const BYTEBIN_ENDPOINT = 'https://bytebin.lucko.me';
  */
 export async function createShortShareUrl(letter: LetterData): Promise<string> {
   const origin = window.location.origin;
-  const pathname = window.location.pathname;
-  const base = `${origin}${pathname}`;
+  const pathname = window.location.pathname.replace(/\/$/, '');
+  const base = `${origin}${pathname}/`;
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(`${BYTEBIN_ENDPOINT}/post`, {
       method: 'POST',
@@ -33,8 +33,8 @@ export async function createShortShareUrl(letter: LetterData): Promise<string> {
     if (res.ok) {
       const data = await res.json();
       const key = data?.key;
-      if (key && typeof key === 'string' && key.length > 2) {
-        return `${base}?id=${encodeURIComponent(key)}`;
+      if (key && typeof key === 'string' && key.trim().length > 2) {
+        return `${base}?id=${encodeURIComponent(key.trim())}`;
       }
     }
   } catch (err) {
@@ -49,7 +49,7 @@ export async function createShortShareUrl(letter: LetterData): Promise<string> {
 /**
  * Resolves a shared letter from either:
  * 1. Query parameter ?id=<shortKey>
- * 2. Hash fragment #id=<shortKey>
+ * 2. Hash fragment #id=<shortKey> or #?id=<shortKey>
  * 3. Hash fragment #l=<compressedPayload>
  */
 export async function resolveSharedLetter(
@@ -60,23 +60,32 @@ export async function resolveSharedLetter(
   if (search) {
     const params = new URLSearchParams(search);
     const id = params.get('id');
-    if (id && id.length > 2) {
-      const remote = await fetchLetterById(id);
+    if (id && id.trim().length > 2) {
+      const cleanId = id.trim().replace(/\/$/, '');
+      const remote = await fetchLetterById(cleanId);
       if (remote) return remote;
     }
   }
 
-  // 2. Check hash: #id=XYZ
-  if (hash && hash.startsWith('#id=')) {
-    const id = hash.slice(4).trim();
-    if (id && id.length > 2) {
-      const remote = await fetchLetterById(id);
-      if (remote) return remote;
+  // 2. Check hash: #id=XYZ or #?id=XYZ
+  if (hash) {
+    if (hash.startsWith('#id=')) {
+      const id = hash.slice(4).trim().replace(/\/$/, '');
+      if (id.length > 2) {
+        const remote = await fetchLetterById(id);
+        if (remote) return remote;
+      }
+    } else if (hash.includes('id=')) {
+      const match = hash.match(/id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1] && match[1].length > 2) {
+        const remote = await fetchLetterById(match[1]);
+        if (remote) return remote;
+      }
     }
   }
 
   // 3. Check legacy or standalone hash: #l=... or raw hash
-  if (hash && (hash.startsWith('#l=') || hash.length > 5)) {
+  if (hash && (hash.startsWith('#l=') || (hash.length > 5 && !hash.startsWith('#id=')))) {
     return decodeLetterFromHash(hash);
   }
 
