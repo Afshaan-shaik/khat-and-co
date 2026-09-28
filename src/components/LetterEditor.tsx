@@ -59,11 +59,12 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
   const fontBaseSize = currentFont.baseFontSize;
 
   return (
-    <div className="desk-container">
+    <div className="desk-container" data-testid="letter">
       {/* Stationery Paper Sheet with entrance settle animation */}
       <div
         ref={letterSheetRef}
         id="khat-letter-sheet"
+        data-testid="letter-sheet"
         className={`letter-sheet letter-entrance ${getBorderClass()}`}
         style={{
           backgroundColor: currentTemplate.paperBg,
@@ -90,6 +91,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             <span
               className="text-muted font-sans fw-semibold text-uppercase"
               style={{ fontSize: '11px', letterSpacing: '1px', opacity: 0.7 }}
+              data-testid="letter-to-label"
             >
               Envelope To:
             </span>
@@ -131,13 +133,14 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         {/* Salutation / Greeting */}
         <div className="mb-3">
           {readOnly ? (
-            <h2 className="fs-3 m-0" style={{ fontFamily: 'inherit', color: 'inherit' }}>
+            <h2 className="fs-3 m-0" data-testid="letter-greeting" style={{ fontFamily: 'inherit', color: 'inherit' }}>
               {letter.greeting}
             </h2>
           ) : (
             <input
               type="text"
               className="letter-input-clean fs-3"
+              data-testid="letter-greeting"
               value={letter.greeting}
               onChange={(e) => onChangeLetter({ greeting: e.target.value })}
               placeholder="Greeting (e.g. My Dearest,)"
@@ -152,6 +155,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
           {readOnly ? (
             <div
               className="letter-body-textarea"
+              data-testid="letter-body"
               style={{ whiteSpace: 'pre-wrap', minHeight: '320px' }}
             >
               {letter.body}
@@ -161,6 +165,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
               ref={textareaRef}
               rows={10}
               className="letter-input-clean letter-body-textarea w-100"
+              data-testid="letter-body"
               value={letter.body}
               onChange={(e) => onChangeLetter({ body: e.target.value })}
               placeholder="Write your letter here... Pour your heart onto this paper. It automatically autosaves."
@@ -171,7 +176,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         </div>
 
         {/* Sign-off & Sender Name (Bottom right aligned) */}
-        <div className="d-flex flex-column align-items-end mt-4 pt-3">
+        <div className="d-flex flex-column align-items-end mt-4 pt-3" data-testid="letter-footer">
           <div style={{ maxWidth: '300px', width: '100%', textAlign: 'right' }}>
             {readOnly ? (
               <div className="fs-4">{letter.signoff}</div>

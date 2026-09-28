@@ -269,7 +269,7 @@ export const App: React.FC = () => {
       {/* Two-column workspace: sidebar + editor */}
       <div className="workspace-layout flex-grow-1">
         {/* ── LEFT SIDEBAR PANEL ── */}
-        <aside className="sidebar-panel" aria-label="Letter customization panel">
+        <aside className="sidebar-panel" data-testid="left-panel" aria-label="Letter customization panel">
 
           {/* Paper Stationery Picker */}
           <section aria-labelledby="paper-section-label">
@@ -310,7 +310,7 @@ export const App: React.FC = () => {
         </aside>
 
         {/* ── RIGHT EDITOR COLUMN ── */}
-        <main className="editor-column" aria-label="Letter writing area">
+        <main className="editor-column" data-testid="stage" aria-label="Letter writing area">
           <LetterEditor
             letter={letter}
             onChangeLetter={handleUpdateLetter}

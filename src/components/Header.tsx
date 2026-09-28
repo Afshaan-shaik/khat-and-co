@@ -30,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="brand-link"
           role="banner"
           aria-label="Khat & Co. — letters for the people you miss"
+          data-testid="logo"
           onClick={(e) => e.preventDefault()}
         >
           <BrandLogo theme={theme} className="brand-logo-img" />
@@ -41,7 +42,10 @@ export const Header: React.FC<HeaderProps> = ({
         </span>
 
         {/* ── Action Controls ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', justifyContent: 'flex-end', flexShrink: 0 }}>
+        <div
+          data-testid="action-bar"
+          style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', justifyContent: 'flex-end', flexShrink: 0 }}
+        >
 
           {/* Weekly Prompt */}
           <button
@@ -114,6 +118,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onToggleTheme}
             title={theme === 'dark' ? 'Switch to daylight paper' : 'Switch to night desk'}
             aria-label="Toggle dark/light desk theme"
+            data-testid="theme-toggle"
           >
             {theme === 'dark' ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FAD889" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

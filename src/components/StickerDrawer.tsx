@@ -23,7 +23,7 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
   // ── INLINE SIDEBAR MODE ── (renders a static sticker collection block)
   if (inlineSidebar) {
     return (
-      <div className="sticker-section">
+      <div className="sticker-section" data-testid="sticker-tray">
 
         {/* Category Tabs */}
         <div className="sticker-cat-tabs" role="tablist" aria-label="Sticker categories">
@@ -106,6 +106,7 @@ export const StickerDrawer: React.FC<StickerDrawerProps> = ({
           className="sticker-drawer-panel no-export"
           role="dialog"
           aria-label="Sticker drawer"
+          data-testid="sticker-tray"
         >
           {/* Header */}
           <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid var(--ui-panel-border)', background: 'var(--drawer-header-bg)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

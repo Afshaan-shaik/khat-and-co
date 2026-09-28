@@ -165,6 +165,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       <text
         x="176"
         y="114"
+        data-testid="tagline"
         style={{
           fontFamily: "'Kalam', 'Instrument Sans', system-ui, sans-serif",
           fontSize: '25px',

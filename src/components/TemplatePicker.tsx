@@ -12,7 +12,7 @@ export const TemplatePicker: React.FC<TemplatePickerProps> = ({
   onSelectTemplate
 }) => {
   return (
-    <div className="template-scroll" role="radiogroup" aria-label="Choose stationery paper template">
+    <div className="template-scroll" role="radiogroup" aria-label="Choose stationery paper template" data-testid="paper-list">
       {PAPER_TEMPLATES.map((tmpl) => {
         const isSelected = tmpl.id === selectedTemplateId;
         return (
