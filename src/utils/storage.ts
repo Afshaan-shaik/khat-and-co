@@ -37,7 +37,7 @@ export function createDefaultLetter(): LetterData {
         x: 82,
         y: 6,
         scale: 1.05,
-        rotation: 3,
+        rotation: 0,
         zIndex: 2
       },
       {
@@ -46,7 +46,7 @@ export function createDefaultLetter(): LetterData {
         x: 74,
         y: 11,
         scale: 0.95,
-        rotation: -6,
+        rotation: 0,
         zIndex: 3
       },
       {

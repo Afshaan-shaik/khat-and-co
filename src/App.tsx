@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LetterData, PaperTemplate, FontOption } from './types/letter';
+import { LetterData, PaperTemplate, FontOption, PlacedSticker } from './types/letter';
 import {
   loadSavedDraft,
   saveDraft,
@@ -130,24 +130,43 @@ export const App: React.FC = () => {
     handleUpdateLetter({ ruledLines: !letter.ruledLines });
   };
 
-  // Add Sticker
+  // Add Sticker — perfectly straight (0° rotation) and centered horizontally on the letter
   const handleAddSticker = (stickerDef: StickerDefinition) => {
-    const count = letter.stickers.length;
-    const offsetX = 20 + ((count * 15) % 60);
-    const offsetY = 25 + ((count * 12) % 55);
+    const letterEl = letterSheetRef.current;
+    const letterRect = letterEl?.getBoundingClientRect();
+    const letterWidth = letterRect?.width || 640;
+    const stickerWidth = stickerDef.width || 80;
 
-    const newPlaced = {
+    // Convert sticker pixel width to percentage of sheet width
+    const stickerWidthPercent = (stickerWidth / letterWidth) * 100;
+
+    // Center horizontally: exactly half of sheet width minus half of sticker width
+    // Ensures equal spacing on both left and right (not a little left nor a little right)
+    const centeredX = Math.round((50 - stickerWidthPercent / 2) * 10) / 10;
+
+    // Proper vertical focal placement on the letter
+    const count = letter.stickers.length;
+    // Keep it in the clean reading area, gently staggering if user adds multiple consecutive stickers
+    const placedY = Math.round(Math.min(36 + ((count % 5) * 6), 62) * 10) / 10;
+
+    const newPlaced: PlacedSticker = {
       id: `stk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       stickerId: stickerDef.id,
-      x: offsetX,
-      y: offsetY,
+      x: centeredX,
+      y: placedY,
       scale: 1,
-      rotation: Math.round(Math.random() * 20 - 10),
+      rotation: 0, // Strictly straight (0° rotation, no tilt)
       zIndex: Math.max(...letter.stickers.map((s) => s.zIndex), 0) + 1
     };
 
     handleUpdateLetter({ stickers: [...letter.stickers, newPlaced] });
-    showToast(`Added "${stickerDef.name}" to letter. You can drag and position it!`);
+
+    // On mobile, switch back to 'write' tab so user immediately sees their placed sticker on the letter
+    if (typeof window !== 'undefined' && window.innerWidth <= 767) {
+      setMobileTab('write');
+    }
+
+    showToast(`Added "${stickerDef.name}" straight to your letter!`);
   };
 
   // Share Letter Link (Ultra-short, WhatsApp & Messenger friendly)

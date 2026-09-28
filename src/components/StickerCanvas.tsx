@@ -117,6 +117,29 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
     );
   };
 
+  // Straighten to 0 degrees
+  const handleStraighten = (id: string) => {
+    onChangeStickers(
+      stickers.map((s) => (s.id === id ? { ...s, rotation: 0 } : s))
+    );
+  };
+
+  // Align sticker to horizontal center and straighten
+  const handleCenter = (id: string) => {
+    const container = containerRef.current;
+    const containerWidth = container?.clientWidth || 640;
+    const targetSticker = stickers.find((s) => s.id === id);
+    if (!targetSticker) return;
+    const def = STICKER_REGISTRY[targetSticker.stickerId];
+    const stickerWidth = (def?.width || 80) * targetSticker.scale;
+    const stickerWidthPercent = (stickerWidth / containerWidth) * 100;
+    const centeredX = Math.round((50 - stickerWidthPercent / 2) * 10) / 10;
+
+    onChangeStickers(
+      stickers.map((s) => (s.id === id ? { ...s, x: centeredX, rotation: 0 } : s))
+    );
+  };
+
   const handleScale = (id: string, deltaScale: number) => {
     onChangeStickers(
       stickers.map((s) =>
@@ -131,6 +154,7 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
       id: `stk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       x: Math.min(sticker.x + 3, 90),
       y: Math.min(sticker.y + 3, 90),
+      rotation: 0, // Duplicate starts straight
       zIndex: Math.max(...stickers.map((s) => s.zIndex), 1) + 1
     };
     onChangeStickers([...stickers, newSticker]);
@@ -285,6 +309,18 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
                   ↺
                 </button>
 
+                {/* Straighten (0°) */}
+                <button
+                  type="button"
+                  className="sticker-tool-btn"
+                  onClick={() => handleStraighten(sticker.id)}
+                  title="Straighten (0°)"
+                  aria-label="Straighten to 0 degrees"
+                  style={{ fontWeight: 700, fontSize: '11px', minWidth: '22px' }}
+                >
+                  0°
+                </button>
+
                 {/* Rotate CW */}
                 <button
                   type="button"
@@ -294,6 +330,18 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
                   aria-label="Rotate Right"
                 >
                   ↻
+                </button>
+
+                {/* Center Horizontally */}
+                <button
+                  type="button"
+                  className="sticker-tool-btn"
+                  onClick={() => handleCenter(sticker.id)}
+                  title="Center Horizontally & Straighten"
+                  aria-label="Center Horizontally"
+                  style={{ fontWeight: 700, fontSize: '12px' }}
+                >
+                  ⫿
                 </button>
 
                 {/* Scale Smaller */}

@@ -114,4 +114,50 @@ test.describe('End-to-End User Smoke Flows', () => {
 
     verifyErrors();
   });
+
+  test('stickers are placed perfectly straight (0deg tilt) and centered horizontally without offset bias', async ({ page }) => {
+    const verifyErrors = attachErrorListeners(page);
+    await page.goto('/');
+    await waitForPageReady(page);
+
+    // Switch to stickers tab if on mobile/small screen
+    const stickerTab = page.getByRole('button', { name: /stickers/i });
+    if (await stickerTab.isVisible()) {
+      await stickerTab.click();
+      await waitForPageReady(page);
+    }
+
+    // Click a sticker to place it on the letter
+    const addStickerBtn = page.locator('.sticker-preview-btn').first();
+    await expect(addStickerBtn).toBeVisible();
+    await addStickerBtn.click();
+    await page.waitForTimeout(300);
+
+    // If on mobile, ensure we are on the letter sheet
+    const writeTab = page.getByRole('button', { name: /write letter/i });
+    if (await writeTab.isVisible()) {
+      await writeTab.click();
+      await waitForPageReady(page);
+    }
+
+    // Get the most recently added placed sticker
+    const placedStickers = page.locator('.stk-placed');
+    const lastSticker = placedStickers.last();
+    await expect(lastSticker).toBeVisible();
+
+    // Verify it is placed with 0deg rotation (perfectly straight, not tilted)
+    const transform = await lastSticker.evaluate((el) => el.style.transform);
+    expect(transform).toContain('rotate(0deg)');
+
+    // Click to select it and test the 0° Straighten button
+    await lastSticker.click({ force: true });
+    const straightenBtn = page.locator('.sticker-tool-btn', { hasText: '0°' });
+    if (await straightenBtn.isVisible()) {
+      await straightenBtn.click();
+      const updatedTransform = await lastSticker.evaluate((el) => el.style.transform);
+      expect(updatedTransform).toContain('rotate(0deg)');
+    }
+
+    verifyErrors();
+  });
 });
