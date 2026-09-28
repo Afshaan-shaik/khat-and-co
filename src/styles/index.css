@@ -174,7 +174,16 @@ button, input, textarea, select {
   color: var(--ui-text-muted) !important;
 }
 
-/* Ensure stationery sheet text respects paper ink */
+/* Dark mode — all form inputs/selects default to theme bg+text (browser UA override) */
+[data-theme="dark"] input:not([class*="letter"]):not(.letter-input-clean),
+[data-theme="dark"] select,
+[data-theme="dark"] textarea:not(.letter-input-clean):not(.letter-body-textarea) {
+  background-color: var(--ui-input-bg);
+  color: var(--ui-text);
+  border-color: var(--ui-input-border);
+}
+
+/* Ensure stationery sheet text respects paper ink (explicit inline color from JS) */
 .letter-sheet,
 .letter-sheet input,
 .letter-sheet textarea,
@@ -382,11 +391,12 @@ button, input, textarea, select {
   display: grid;
   grid-template-columns: var(--sidebar-width) 1fr;
   gap: 0;
+  /* stretch so both panels fill the same height */
+  align-items: stretch;
   min-height: calc(100vh - var(--header-height));
-  align-items: start;
 }
 
-/* Left sidebar panel */
+/* Left sidebar panel — sticky scroll panel, fills grid cell height */
 .sidebar-panel {
   position: sticky;
   top: var(--header-height);
@@ -399,18 +409,22 @@ button, input, textarea, select {
   flex-direction: column;
   gap: 28px;
   scrollbar-width: thin;
+  /* align-self: start keeps sticky working correctly within stretch grid */
+  align-self: start;
 }
 
-/* Right editor column */
+/* Right editor column — fills remaining space, min full viewport height */
 .editor-column {
   padding: 32px 40px 60px;
   min-height: calc(100vh - var(--header-height));
+  /* background is inherited from body; no explicit bg to keep paper visible */
 }
 
 @media (max-width: 1024px) {
   .workspace-layout {
     grid-template-columns: 300px 1fr;
   }
+  .sidebar-panel { height: calc(100vh - var(--header-height)); }
   .editor-column { padding: 24px 24px 60px; }
 }
 
@@ -419,6 +433,7 @@ button, input, textarea, select {
   .workspace-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto 1fr;
+    align-items: start;
   }
   .sidebar-panel {
     position: relative;
@@ -429,6 +444,7 @@ button, input, textarea, select {
     border-bottom: 1px solid var(--ui-panel-border);
     padding: 20px 16px 24px;
     gap: 20px;
+    align-self: auto;
   }
   .editor-column {
     padding: 20px 14px 60px;
