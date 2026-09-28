@@ -245,7 +245,7 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
             role="button"
             tabIndex={readOnly ? -1 : 0}
             aria-label={`${def.name} sticker. Press arrow keys to move, Delete to remove.`}
-            className={`sticker-item ${isSelected ? 'selected' : ''}`}
+            className={`sticker-item stk-placed ${isSelected ? 'selected' : ''}`}
             style={{
               left: `${sticker.x}%`,
               top: `${sticker.y}%`,

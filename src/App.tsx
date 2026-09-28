@@ -5,6 +5,7 @@ import {
   saveDraft,
   loadThemePreference,
   saveThemePreference,
+  createDefaultLetter,
   getFormattedToday
 } from './utils/storage';
 import { encodeLetterToHash, decodeLetterFromHash } from './utils/codec';
@@ -30,6 +31,9 @@ export const App: React.FC = () => {
 
   // Recipient Received Letter state (from URL hash)
   const [recipientLetter, setRecipientLetter] = useState<LetterData | null>(null);
+
+  // Mobile active tab ('write' | 'paper' | 'stickers')
+  const [mobileTab, setMobileTab] = useState<'write' | 'paper' | 'stickers'>('write');
 
   // Modals & Drawers state
   const [isEnvelopeOpen, setIsEnvelopeOpen] = useState(false);
@@ -97,22 +101,11 @@ export const App: React.FC = () => {
 
   // Template change
   const handleSelectTemplate = (tmpl: PaperTemplate) => {
-    setLetter((prev) => {
-      let newInk = prev.inkColor;
-      if (tmpl.isDarkPaper) {
-        newInk = tmpl.defaultInk;
-      } else {
-        const currentTmpl = PAPER_TEMPLATES.find((t) => t.id === prev.templateId);
-        if (currentTmpl?.isDarkPaper) {
-          newInk = tmpl.defaultInk;
-        }
-      }
-      return {
-        ...prev,
-        templateId: tmpl.id,
-        inkColor: newInk
-      };
-    });
+    setLetter((prev) => ({
+      ...prev,
+      templateId: tmpl.id,
+      inkColor: tmpl.defaultInk
+    }));
   };
 
   // Font change
@@ -142,7 +135,7 @@ export const App: React.FC = () => {
       x: offsetX,
       y: offsetY,
       scale: 1,
-      rotation: Math.round((Math.random() * 20 - 10)),
+      rotation: Math.round(Math.random() * 20 - 10),
       zIndex: Math.max(...letter.stickers.map((s) => s.zIndex), 0) + 1
     };
 
@@ -191,6 +184,18 @@ export const App: React.FC = () => {
     }
   };
 
+  // Start fresh letter
+  const handleResetLetter = () => {
+    const hasCustomText = letter.body.trim().length > 0 && letter.body !== createDefaultLetter().body;
+    if (hasCustomText && !window.confirm('Start a fresh letter? This will clear your current message text.')) {
+      return;
+    }
+    const fresh = createDefaultLetter();
+    setLetter(fresh);
+    saveDraft(fresh);
+    showToast('A fresh page ready for your thoughts.');
+  };
+
   // Preview envelope as recipient
   const handlePreviewEnvelope = () => {
     setRecipientLetter(letter);
@@ -235,13 +240,13 @@ export const App: React.FC = () => {
 
     setLetter(replyLetter);
     saveDraft(replyLetter);
+
     window.history.replaceState(null, '', window.location.pathname);
     setIsEnvelopeOpen(false);
     setRecipientLetter(null);
     showToast(`Started reply to ${senderName || 'your friend'}!`);
   };
 
-  // Close envelope modal
   const handleCloseEnvelope = () => {
     setIsEnvelopeOpen(false);
     if (isRecipientFlow) {
@@ -254,8 +259,8 @@ export const App: React.FC = () => {
     PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Sticky Header */}
+    <div className="app-shell">
+      {/* Sticky Header with non-truncated brand identity and responsive action bar */}
       <Header
         theme={theme}
         onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -266,13 +271,46 @@ export const App: React.FC = () => {
         isExporting={isExporting}
       />
 
-      {/* Two-column workspace: sidebar + editor */}
-      <div className="workspace-layout flex-grow-1">
+      {/* Mobile Tab Bar (< 960px) */}
+      <nav className="mobile-tab-bar d-flex d-md-none" aria-label="Mobile navigation tabs">
+        <button
+          type="button"
+          className={`mobile-tab-btn ${mobileTab === 'paper' ? 'active' : ''}`}
+          onClick={() => setMobileTab('paper')}
+        >
+          Paper &amp; Ink
+        </button>
+        <button
+          type="button"
+          className={`mobile-tab-btn ${mobileTab === 'write' ? 'active' : ''}`}
+          onClick={() => setMobileTab('write')}
+        >
+          Write Letter
+        </button>
+        <button
+          type="button"
+          className={`mobile-tab-btn ${mobileTab === 'stickers' ? 'active' : ''}`}
+          onClick={() => setMobileTab('stickers')}
+        >
+          Stickers ({letter.stickers.length})
+        </button>
+      </nav>
+
+      {/* Two-column workspace: left panel and right stage ending on the exact same baseline */}
+      <div className="workspace-layout">
+
         {/* ── LEFT SIDEBAR PANEL ── */}
-        <aside className="sidebar-panel" data-testid="left-panel" aria-label="Letter customization panel">
+        <aside
+          className={`sidebar-panel ${mobileTab !== 'write' ? 'mobile-visible' : ''}`}
+          data-testid="left-panel"
+          aria-label="Letter customization panel"
+        >
 
           {/* Paper Stationery Picker */}
-          <section aria-labelledby="paper-section-label">
+          <section
+            className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
+            aria-labelledby="paper-section-label"
+          >
             <div className="section-label" id="paper-section-label">
               <span>Paper</span>
             </div>
@@ -282,8 +320,11 @@ export const App: React.FC = () => {
             />
           </section>
 
-          {/* Handwriting Font Picker */}
-          <section aria-labelledby="font-section-label">
+          {/* Handwriting Font & Ink Picker */}
+          <section
+            className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
+            aria-labelledby="font-section-label"
+          >
             <FontPicker
               selectedFontId={letter.fontId}
               onSelectFont={handleSelectFont}
@@ -295,8 +336,11 @@ export const App: React.FC = () => {
             />
           </section>
 
-          {/* Sticker & Stamp Collection */}
-          <section aria-labelledby="sticker-section-label">
+          {/* Sticker & Stamp Collection (Docked at the bottom) */}
+          <section
+            className={`sidebar-section sticker-docked-section ${mobileTab === 'paper' ? 'd-none d-md-block' : ''}`}
+            aria-labelledby="sticker-section-label"
+          >
             <div className="section-label" id="sticker-section-label">
               <span>Stickers &amp; Stamps</span>
             </div>
@@ -309,25 +353,88 @@ export const App: React.FC = () => {
 
         </aside>
 
-        {/* ── RIGHT EDITOR COLUMN ── */}
-        <main className="editor-column" data-testid="stage" aria-label="Letter writing area">
+        {/* ── RIGHT STAGE DESK (Letter sheet + Actions at the ending of the letter) ── */}
+        <main
+          className={`editor-column ${mobileTab === 'write' ? 'mobile-visible' : ''}`}
+          data-testid="stage"
+          aria-label="Letter writing area"
+        >
           <LetterEditor
             letter={letter}
             onChangeLetter={handleUpdateLetter}
             letterSheetRef={letterSheetRef}
           />
+
+          {/* Desk Actions — Ending of the letter matching uploaded web page reference */}
+          <div className="desk-actions" role="toolbar" aria-label="Letter actions">
+            <button
+              type="button"
+              className="btn-khat-primary"
+              onClick={handleSavePicture}
+              disabled={isExporting}
+              title="Save the finished letter as a picture"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              <span>{isExporting ? 'Saving...' : 'Save as picture'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-khat-secondary"
+              onClick={handlePreviewEnvelope}
+              title="See it as your reader will (Envelope View)"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" />
+                <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10" />
+              </svg>
+              <span>See it as your reader will</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-khat-secondary"
+              onClick={handleShareLink}
+              title="Create an envelope link to send to your loved one"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+              </svg>
+              <span>Copy share link</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-khat-secondary"
+              onClick={handleResetLetter}
+              title="Start a fresh letter"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                <path d="M21 3v5h-5" />
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                <path d="M8 16H3v5" />
+              </svg>
+              <span>Start a new letter</span>
+            </button>
+          </div>
+
+          {/* Footer branding */}
+          <footer className="app-footer">
+            <p className="app-footer-name">
+              Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+            </p>
+            <p className="app-footer-tagline">
+              खत · letters for the people you miss · Free, no-login digital stationery
+            </p>
+          </footer>
         </main>
       </div>
-
-      {/* Footer */}
-      <footer className="app-footer">
-        <p className="app-footer-name">
-          Khat <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
-        </p>
-        <p className="app-footer-tagline">
-          खत · letters for the people you miss · Free, no-login digital stationery
-        </p>
-      </footer>
 
       {/* Bilingual Weekly Writing Prompts Modal */}
       <PromptModal

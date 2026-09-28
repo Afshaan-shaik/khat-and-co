@@ -6,34 +6,33 @@ import { StickerCanvas } from './StickerCanvas';
 
 interface LetterEditorProps {
   letter: LetterData;
-  onChangeLetter: (updated: Partial<LetterData>) => void;
+  onChangeLetter: (updatedFields: Partial<LetterData>) => void;
+  letterSheetRef: React.RefObject<HTMLDivElement>;
   readOnly?: boolean;
-  letterSheetRef?: React.RefObject<HTMLDivElement>;
 }
 
 export const LetterEditor: React.FC<LetterEditorProps> = ({
   letter,
   onChangeLetter,
-  readOnly = false,
-  letterSheetRef
+  letterSheetRef,
+  readOnly = false
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const currentTemplate =
     PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
+
   const currentFont =
     HANDWRITING_FONTS.find((f) => f.id === letter.fontId) || HANDWRITING_FONTS[0];
 
-  // Auto-resize textarea to fit content seamlessly
+  // Auto-resize textarea as content grows
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.max(scrollHeight, 380)}px`;
+      textareaRef.current.style.height = `${Math.max(textareaRef.current.scrollHeight, 320)}px`;
     }
   }, [letter.body, letter.fontId]);
 
-  // Border class based on template borderType
   const getBorderClass = () => {
     switch (currentTemplate.borderType) {
       case 'airmail':
@@ -44,10 +43,10 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         return 'border-stars';
       case 'botanical':
         return 'border-botanical';
-      case 'stitched':
-        return 'border-stitched';
       case 'vintage':
         return 'border-vintage';
+      case 'stitched':
+        return 'border-stitched';
       case 'slate':
         return 'border-slate';
       default:
@@ -70,7 +69,9 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
           backgroundColor: currentTemplate.paperBg,
           color: letter.inkColor,
           fontFamily: currentFont.family,
-          // CSS variables for typography & ruled lines alignment
+          colorScheme: currentTemplate.isDarkPaper ? 'dark' : 'light',
+          ['--paper-bg' as string]: currentTemplate.paperBg,
+          ['--paper-ink' as string]: letter.inkColor,
           ['--font-line-height' as string]: `${fontLineHeight}px`,
           ['--font-base-size' as string]: `${fontBaseSize}px`,
           ['--ruled-line-color' as string]: letter.ruledLines ? currentTemplate.ruledColor : 'transparent',
@@ -87,16 +88,22 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         {/* Recipient envelope tag & Date header */}
         <div className="d-flex justify-content-between align-items-baseline flex-wrap gap-2 mb-4">
           {/* Recipient Name (For the envelope & letter) */}
-          <div className="d-flex align-items-baseline gap-2" style={{ maxWidth: '60%' }}>
+          <div className="d-flex align-items-baseline gap-2" style={{ maxWidth: '65%', flexWrap: 'nowrap' }}>
             <span
-              className="text-muted font-sans fw-semibold text-uppercase"
-              style={{ fontSize: '11px', letterSpacing: '1px', opacity: 0.7 }}
+              className="letter-to-label"
               data-testid="letter-to-label"
+              style={{
+                whiteSpace: 'nowrap',
+                color: letter.inkColor,
+                fontWeight: 700,
+                fontSize: '11px',
+                letterSpacing: '1px'
+              }}
             >
               Envelope To:
             </span>
             {readOnly ? (
-              <span className="fs-5 fw-semibold">{letter.recipient}</span>
+              <span className="fs-5 fw-semibold" style={{ color: 'inherit' }}>{letter.recipient}</span>
             ) : (
               <input
                 type="text"
@@ -106,6 +113,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                 placeholder="Recipient's Name (e.g. For Anaya)"
                 maxLength={100}
                 aria-label="Recipient's Name"
+                style={{ color: 'inherit' }}
               />
             )}
           </div>
@@ -113,7 +121,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
           {/* Letter Date */}
           <div className="text-end ms-auto">
             {readOnly ? (
-              <span className="fs-6" style={{ opacity: 0.85 }}>
+              <span className="fs-6" style={{ color: 'inherit', opacity: 0.88 }}>
                 {letter.date}
               </span>
             ) : (
@@ -125,6 +133,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                 placeholder="Date of letter"
                 maxLength={60}
                 aria-label="Date of letter"
+                style={{ color: 'inherit', opacity: 0.88 }}
               />
             )}
           </div>
@@ -146,6 +155,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
               placeholder="Greeting (e.g. My Dearest,)"
               maxLength={100}
               aria-label="Letter Greeting"
+              style={{ color: 'inherit' }}
             />
           )}
         </div>
@@ -156,7 +166,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
             <div
               className="letter-body-textarea"
               data-testid="letter-body"
-              style={{ whiteSpace: 'pre-wrap', minHeight: '320px' }}
+              style={{ whiteSpace: 'pre-wrap', minHeight: '320px', color: 'inherit' }}
             >
               {letter.body}
             </div>
@@ -171,6 +181,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
               placeholder="Write your letter here... Pour your heart onto this paper. It automatically autosaves."
               aria-label="Letter body"
               maxLength={6000}
+              style={{ color: 'inherit' }}
             />
           )}
         </div>
@@ -179,7 +190,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
         <div className="d-flex flex-column align-items-end mt-4 pt-3" data-testid="letter-footer">
           <div style={{ maxWidth: '300px', width: '100%', textAlign: 'right' }}>
             {readOnly ? (
-              <div className="fs-4">{letter.signoff}</div>
+              <div className="fs-4" style={{ color: 'inherit' }}>{letter.signoff}</div>
             ) : (
               <input
                 type="text"
@@ -189,11 +200,12 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                 placeholder="Sign-off (e.g. Yours always,)"
                 maxLength={80}
                 aria-label="Letter Sign-off"
+                style={{ color: 'inherit' }}
               />
             )}
 
             {readOnly ? (
-              <div className="fs-3 fw-bold mt-1">{letter.sender}</div>
+              <div className="fs-3 fw-bold mt-1" style={{ color: 'inherit' }}>{letter.sender}</div>
             ) : (
               <input
                 type="text"
@@ -203,6 +215,7 @@ export const LetterEditor: React.FC<LetterEditorProps> = ({
                 placeholder="Your Name (e.g. Rohan)"
                 maxLength={80}
                 aria-label="Sender Name"
+                style={{ color: 'inherit' }}
               />
             )}
           </div>
