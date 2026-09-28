@@ -190,11 +190,46 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, stickers, readOnly]);
 
+  // Click or touch anywhere outside (blank page, margins, desk, textarea) to deselect (Canva-like behavior)
+  useEffect(() => {
+    if (readOnly || !selectedId) return;
+
+    const handlePointerDownOutside = (e: PointerEvent | MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+
+      // If clicked inside the currently selected sticker or its floating toolbar, do not deselect
+      const activeEl = document.getElementById(`placed_${selectedId}`);
+      if (activeEl && activeEl.contains(target)) {
+        return;
+      }
+
+      // If clicked on another sticker, let that sticker's pointerDown handle selection
+      if (target.closest && target.closest('.sticker-item')) {
+        return;
+      }
+
+      // Otherwise, user clicked/touched the blank page, left/right margins, empty desk, or typing area:
+      // Immediately deselect and dismiss all toolbars/outlines with zero data loss
+      setSelectedId(null);
+    };
+
+    // Use capture phase to ensure it catches clicks even across textareas or layered elements
+    window.addEventListener('pointerdown', handlePointerDownOutside, true);
+    window.addEventListener('touchstart', handlePointerDownOutside, true);
+    window.addEventListener('mousedown', handlePointerDownOutside, true);
+
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDownOutside, true);
+      window.removeEventListener('touchstart', handlePointerDownOutside, true);
+      window.removeEventListener('mousedown', handlePointerDownOutside, true);
+    };
+  }, [selectedId, readOnly]);
+
   return (
     <div
       ref={containerRef}
       className="stickers-layer"
-      onClick={() => !readOnly && setSelectedId(null)}
       aria-label="Decorated stickers on letter"
     >
       {stickers.map((sticker) => {
@@ -303,6 +338,20 @@ export const StickerCanvas: React.FC<StickerCanvasProps> = ({
                   aria-label="Bring to Front"
                 >
                   ▲
+                </button>
+
+                {/* Done / Deselect Button */}
+                <button
+                  type="button"
+                  className="sticker-tool-btn text-success fw-bold"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedId(null);
+                  }}
+                  title="Done / Deselect (✓)"
+                  aria-label="Done editing"
+                >
+                  ✓
                 </button>
 
                 {/* Delete */}
