@@ -22,6 +22,17 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
   const [isRevealed, setIsRevealed] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const letterSheetRef = useRef<HTMLDivElement>(null);
+  const modalBackdropRef = useRef<HTMLDivElement>(null);
+
+  // When revealed, make sure the modal is scrolled all the way to the top so the letter starts from the header
+  useEffect(() => {
+    if (isRevealed) {
+      if (modalBackdropRef.current) {
+        modalBackdropRef.current.scrollTop = 0;
+      }
+      window.scrollTo(0, 0);
+    }
+  }, [isRevealed]);
 
   // Reset states whenever modal opens
   useEffect(() => {
@@ -34,6 +45,9 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
       } else {
         setIsOpening(false);
         setIsRevealed(false);
+      }
+      if (modalBackdropRef.current) {
+        modalBackdropRef.current.scrollTop = 0;
       }
     }
   }, [isOpen]);
@@ -67,6 +81,9 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
   const handleReplay = () => {
     setIsRevealed(false);
     setIsOpening(false);
+    if (modalBackdropRef.current) {
+      modalBackdropRef.current.scrollTop = 0;
+    }
   };
 
   const handleSavePicture = async () => {
@@ -86,7 +103,8 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
 
   return (
     <div
-      className="envelope-modal-backdrop"
+      ref={modalBackdropRef}
+      className={`envelope-modal-backdrop ${isRevealed ? 'revealed' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-label="Letter reading experience"
@@ -338,9 +356,9 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
         </div>
       )}
 
-      {/* STAGE 2: REVEALED READ-ONLY LETTER SHEET */}
+      {/* STAGE 2: REVEALED READ-ONLY LETTER SHEET (Starts from header, fully scrollable) */}
       {isRevealed && (
-        <div className="w-100" style={{ paddingTop: '70px', paddingBottom: '40px' }}>
+        <div className="w-100 envelope-revealed-container" style={{ paddingTop: '74px', paddingBottom: '60px' }}>
           <LetterEditor
             letter={letter}
             onChangeLetter={() => {}}

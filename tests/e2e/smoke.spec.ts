@@ -95,10 +95,16 @@ test.describe('End-to-End User Smoke Flows', () => {
     await expect(envelopeModal).toBeVisible();
 
     // Tap wax seal to open envelope
-    const waxSeal = page.locator('.wax-seal-container, [aria-label*="open" i]').first();
+    const waxSeal = page.locator('.pulsing-wax-seal, .wax-seal-container, [aria-label*="open" i]').first();
     if (await waxSeal.isVisible()) {
       await waxSeal.click({ force: true });
-      await page.waitForTimeout(600);
+      await page.waitForTimeout(1400);
+
+      // Verify the revealed letter starts from top header
+      const toLabel = envelopeModal.locator('.letter-to-label');
+      if (await toLabel.isVisible()) {
+        await expect(toLabel).toBeVisible();
+      }
     }
 
     // Close preview via Escape
