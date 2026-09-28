@@ -231,24 +231,27 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
               </div>
             </div>
 
-            {/* Handwritten Addressed Text on Front */}
+            {/* Handwritten Addressed Text on Front - Down-Left Side */}
             <div
-              className="text-start px-4 px-md-5"
+              className="text-start"
               style={{
-                position: 'relative',
-                zIndex: 10,
-                marginTop: '30px',
+                position: 'absolute',
+                bottom: '22px',
+                left: '26px',
+                zIndex: 20,
                 fontFamily: "'Kalam', 'Caveat', cursive",
-                color: '#1F2340'
+                color: '#1F2340',
+                maxWidth: '46%',
+                pointerEvents: 'none'
               }}
             >
-              <div className="small text-muted font-sans text-uppercase fw-semibold" style={{ fontSize: '11px', letterSpacing: '1px' }}>
-                To:
+              <div className="small text-muted font-sans text-uppercase fw-bold" style={{ fontSize: '11px', letterSpacing: '1px', opacity: 0.75, marginBottom: '2px' }}>
+                TO:
               </div>
-              <div className="fs-2 fw-bold lh-1 mb-2" style={{ color: '#1F2340' }}>
+              <div className="fw-bold lh-1 mb-2" style={{ fontSize: 'clamp(20px, 4.5vw, 28px)', color: '#1F2340', lineHeight: 1.1, wordBreak: 'break-word' }}>
                 {letter.recipient || 'Dearest Friend'}
               </div>
-              <div className="fs-5 text-muted font-sans mt-2" style={{ fontSize: '14px' }}>
+              <div className="fs-5 text-muted font-sans mt-1" style={{ fontSize: '13px' }}>
                 From: <span className="font-kalam fw-bold" style={{ color: '#B4455A', fontSize: '18px' }}>{letter.sender || 'Someone who loves you'}</span>
               </div>
             </div>

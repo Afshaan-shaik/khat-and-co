@@ -628,21 +628,25 @@ button, input, textarea, select {
   pointer-events: none;
 }
 
-/* Pulsing Wax Seal on Envelope */
+/* Pulsing Wax Seal on Envelope - Positioned at flap tip center */
 @keyframes sealPulse {
   0%, 100% {
-    transform: scale(1);
+    transform: translate(-50%, -50%) scale(1);
     box-shadow: 0 4px 14px rgba(180, 69, 90, 0.4);
   }
   50% {
-    transform: scale(1.08);
+    transform: translate(-50%, -50%) scale(1.08);
     box-shadow: 0 6px 22px rgba(180, 69, 90, 0.65);
   }
 }
 
 .pulsing-wax-seal {
-  width: 80px;
-  height: 80px;
+  position: absolute;
+  top: 52%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 78px;
+  height: 78px;
   border-radius: 50%;
   cursor: pointer;
   animation: sealPulse 2s infinite ease-in-out;
@@ -656,7 +660,7 @@ button, input, textarea, select {
   transition: transform 0.2s ease;
 }
 .pulsing-wax-seal:hover {
-  transform: scale(1.12);
+  transform: translate(-50%, -50%) scale(1.12);
 }
 
 /* 3D Flap animation */
