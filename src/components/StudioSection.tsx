@@ -308,6 +308,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
   const salutePre = isHindi ? 'प्रिय' : 'Dear';
   const waxColor = letter.waxSeal?.color || 'oxblood';
   const waxMono = letter.waxSeal?.customText || letter.waxSeal?.symbol || 'K';
+  const currentTemplate = PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
 
   // Sticker pack filter
   const getStickersForPack = () => {
@@ -1191,7 +1192,16 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
       >
         <div
           ref={exportPaperRef}
-          className={`paper p-${letter.templateId} f-${letter.fontId} sz-${letter.fontSize || 'm'} ${letter.ruledLines ? 'p-lined' : ''}`}
+          className={`paper p-${currentTemplate.id} f-${letter.fontId} sz-${letter.fontSize || 'm'} ${letter.ruledLines ? 'p-lined' : ''}`}
+          style={{
+            backgroundColor: currentTemplate.paperBg,
+            color: letter.inkColor || currentTemplate.defaultInk,
+            ['--pbg' as string]: currentTemplate.paperBg,
+            ['--ink' as string]: letter.inkColor || currentTemplate.defaultInk,
+            ['--ruled-line-color' as string]: letter.ruledLines ? currentTemplate.ruledColor : 'transparent',
+            ['--margin-line-color' as string]: currentTemplate.isDarkPaper ? 'transparent' : 'rgba(210, 56, 47, 0.35)',
+            ...(currentTemplate.borderType !== 'airmail' ? { border: currentTemplate.paperBorder } : {})
+          }}
         >
           <div className="paper-in">
             <div className="salute letter-to-label">

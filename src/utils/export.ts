@@ -54,13 +54,31 @@ async function captureElementToOpaqueImage(
       ? rawBg
       : '#F8F3EA';
 
+  // SVG feTurbulence filters inside SVG foreignObject composite in linear RGB in Chromium,
+  // causing an artificial 30+ RGB level darkening across stationery templates.
+  // We sanitize the background-image by filtering out the feTurbulence grain layer
+  // while preserving all decorative gradients, botanical SVGs, and star constellations.
+  const rawBgImage = computedStyle.backgroundImage;
+  let cleanBgImage: string | undefined = undefined;
+  if (rawBgImage && rawBgImage !== 'none') {
+    const cleaned = rawBgImage
+      .replace(/url\("data:image\/svg\+xml[^"]*feTurbulence[^"]*"\)/gi, '')
+      .replace(/url\('data:image\/svg\+xml[^']*feTurbulence[^']*'\)/gi, '')
+      .replace(/url\(data:image\/svg\+xml[^)]*feTurbulence[^)]*\)/gi, '')
+      .replace(/,\s*,/g, ',')
+      .replace(/^[\s,]+|[\s,]+$/g, '')
+      .trim();
+    cleanBgImage = cleaned || 'none';
+  }
+
   const renderOptions = {
     pixelRatio: Math.max(pixelRatio, 2),
     cacheBust: false,
     backgroundColor: bgColor,
     filter,
     style: {
-      boxShadow: 'none' // Prevent clipped outer box shadow from creating dark bars on PDF page edges
+      boxShadow: 'none', // Prevent clipped outer box shadow from creating dark bars on PDF page edges
+      ...(cleanBgImage !== undefined ? { backgroundImage: cleanBgImage } : {})
     }
   };
 

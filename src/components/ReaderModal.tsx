@@ -4,6 +4,7 @@ import { sfx } from '../utils/sound';
 import { renderWaxSealSvg, resolveWaxSeal } from '../constants/waxSeal';
 import { renderPostageStampSvg, renderPostmarkSvg } from '../utils/stamps';
 import { STICKER_REGISTRY } from '../constants/stickers';
+import { PAPER_TEMPLATES } from '../constants/templates';
 import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
 
 interface ReaderModalProps {
@@ -198,6 +199,10 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
   const waxMono = displaySymbol;
   const isHindi = letter?.language === 'hi' || (letter?.body && /[\u0900-\u097F]/.test(letter.body));
   const salutePre = isHindi ? 'प्रिय' : 'Dear';
+  const currentTemplate = PAPER_TEMPLATES.find((t) => t.id === letter?.templateId) || PAPER_TEMPLATES[0];
+  const inkColor = letter?.inkColor || currentTemplate.defaultInk;
+  const paperBg = currentTemplate.paperBg;
+  const ruledColor = letter?.ruledLines !== false ? currentTemplate.ruledColor : 'transparent';
 
   return (
     <div
@@ -359,10 +364,19 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
           /* Unsealed Opened Letter View - EXACT MATCH TO IMAGE 3 */
           <>
             <div className="reader-letter envelope-revealed-container">
-              <div
-                ref={paperRef}
-                className={`paper p-${letter?.templateId || 'lined'} f-${letter?.fontId || 'caveat'} sz-${letter?.fontSize || 'm'} ${letter?.ruledLines !== false ? 'p-lined' : ''}`}
-              >
+                <div
+                  ref={paperRef}
+                  className={`paper p-${currentTemplate.id} f-${letter?.fontId || 'caveat'} sz-${letter?.fontSize || 'm'} ${letter?.ruledLines !== false ? 'p-lined' : ''}`}
+                  style={{
+                    backgroundColor: paperBg,
+                    color: inkColor,
+                    ['--pbg' as string]: paperBg,
+                    ['--ink' as string]: inkColor,
+                    ['--ruled-line-color' as string]: ruledColor,
+                    ['--margin-line-color' as string]: currentTemplate.isDarkPaper ? 'transparent' : 'rgba(210, 56, 47, 0.35)',
+                    ...(currentTemplate.borderType !== 'airmail' ? { border: currentTemplate.paperBorder } : {})
+                  }}
+                >
                 <div className="paper-in">
                   <div className="salute letter-to-label">
                     <span>{salutePre}</span>
