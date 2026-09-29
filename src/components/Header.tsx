@@ -52,11 +52,6 @@ export const Header: React.FC<HeaderProps> = ({
             }}
             aria-label="Open Studio"
             data-testid="nav-studio"
-            style={{
-              color: isDark ? 'var(--text)' : '#000000',
-              fontWeight: 500,
-              cursor: 'pointer'
-            }}
           >
             Studio
           </a>

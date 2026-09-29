@@ -133,7 +133,7 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
     // 2. Verify the 4 header navigation options: Write, Studio, Shelf, Nudge
     const navLinks = page.locator('.nav-links');
     if (await navLinks.isVisible()) {
-      const writeLink = navLinks.locator('a[href="#studio"]');
+      const writeLink = navLinks.getByRole('link', { name: 'Write', exact: true });
       await expect(writeLink).toHaveText('Write');
 
       const studioLink = navLinks.locator('.nav-studio');
@@ -145,9 +145,14 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
       const nudgeLink = navLinks.locator('a[href="#nudge"]');
       await expect(nudgeLink).toHaveText('Nudge');
 
-      // Verify Studio black text styling in light mode
+      // Verify Studio text styling (black in light mode, ivory in dark mode)
+      const isDarkTheme = await page.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark');
       const studioColor = await studioLink.evaluate((el) => window.getComputedStyle(el).color);
-      expect(studioColor).toBe('rgb(0, 0, 0)');
+      if (isDarkTheme) {
+        expect(studioColor).toBe('rgb(239, 231, 214)');
+      } else {
+        expect(studioColor).toBe('rgb(0, 0, 0)');
+      }
     }
 
     // 3. Verify clicking Studio opens Studio customizer
@@ -158,7 +163,9 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
       await page.locator('.studio-back-btn').click();
     }
 
-    // Screenshot updated header
+    // Scroll to top and screenshot updated header
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(400);
     await page.screenshot({ path: 'test-results/live-updated-header.png' });
   });
 
