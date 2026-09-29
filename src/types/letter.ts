@@ -13,6 +13,7 @@ export interface WaxSealData {
   symbol: string; // '♡' | '✦' | '∞' | '✿' | '☽' | '♔' | custom text
   isCustom?: boolean;
   customText?: string;
+  color?: string; // 'oxblood' | 'navy' | 'forest' | 'gold' | 'rose'
 }
 
 export interface LetterData {
@@ -28,6 +29,14 @@ export interface LetterData {
   stickers: PlacedSticker[];
   ruledLines: boolean; // toggle ruled lines on or off
   waxSeal?: WaxSealData;
+  city?: string; // "Pune", "Jaipur", etc.
+  stamp?: number; // 0, 1, 2, 3
+  ps?: string; // "P.S. The terrace plant is still alive."
+  unlockDate?: string; // YYYY-MM-DD
+  passphrase?: string;
+  voiceNoteUrl?: string | null;
+  fontSize?: 's' | 'm' | 'l';
+  language?: 'en' | 'hi';
 }
 
 export interface PaperTemplate {

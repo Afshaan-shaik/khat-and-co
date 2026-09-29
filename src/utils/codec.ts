@@ -68,7 +68,66 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
     if (!jsonStr) return null;
     const raw = JSON.parse(jsonStr);
 
-    // Sanitize & Validate fields
+    // Check if Claude HTML pack1 format: {v:1, a:to, b:from, c:text, d:close, e:lang, f:font, g:size, h:paper, i:stickers, j:seal, k:stamp, l:city, m:date, n:ps, o:unlock, p:pass}
+    if (raw.v === 1 || (raw.a !== undefined && raw.c !== undefined)) {
+      const lang = raw.e === 'hi' ? 'hi' : 'en';
+      const to = String(raw.a || '');
+      const from = String(raw.b || '');
+      const text = String(raw.c || '');
+      const close = String(raw.d || (lang === 'hi' ? 'प्यार सहित' : 'With love,'));
+      const font = String(raw.f || 'caveat');
+      const size = (raw.g === 's' || raw.g === 'l') ? raw.g : 'm';
+      const paper = String(raw.h || 'lined');
+      const stamp = Number(raw.k) || 0;
+      const city = String(raw.l || '');
+      const date = raw.m ? new Date(raw.m).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      const ps = String(raw.n || '');
+      const unlockDate = String(raw.o || '');
+      const passphrase = String(raw.p || '');
+
+      const sealColor = (raw.j && raw.j[0]) || 'oxblood';
+      const sealMono = (raw.j && raw.j[1]) || 'K';
+
+      const stickers: PlacedSticker[] = (raw.i || []).map((arr: any, idx: number) => ({
+        id: `stk_${idx}_${Date.now()}`,
+        stickerId: String(arr[0] || 'heart'),
+        x: Number(arr[1]) || 50,
+        y: Number(arr[2]) || 50,
+        scale: Number(arr[3]) ? Number(arr[3]) / 20 : 1,
+        rotation: Number(arr[4]) || 0,
+        zIndex: idx + 1
+      }));
+
+      return {
+        recipient: to,
+        sender: from,
+        greeting: lang === 'hi' ? `प्रिय ${to},` : `Dear ${to},`,
+        body: text,
+        signoff: close,
+        date,
+        templateId: paper,
+        fontId: font,
+        inkColor: '#1F2340',
+        stickers,
+        ruledLines: paper === 'lined',
+        waxSeal: {
+          id: 'custom',
+          symbol: sealMono,
+          isCustom: true,
+          customText: sealMono,
+          color: sealColor
+        },
+        city,
+        stamp,
+        ps,
+        unlockDate,
+        passphrase,
+        fontSize: size,
+        language: lang
+      };
+    }
+
+    // Sanitize & Validate standard fields
     const validTemplateIds = new Set(PAPER_TEMPLATES.map((t) => t.id));
     const validFontIds = new Set(HANDWRITING_FONTS.map((f) => f.id));
 
@@ -116,7 +175,8 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
           id: String(rawWs.id || (rawWs.s === '♡' ? 'heart' : 'custom')),
           symbol: String(rawWs.s || rawWs.symbol || '♡'),
           isCustom: rawWs.c !== undefined ? Boolean(rawWs.c) : Boolean(rawWs.isCustom),
-          customText: String(rawWs.t || rawWs.customText || 'A').slice(0, 2)
+          customText: String(rawWs.t || rawWs.customText || 'A').slice(0, 2),
+          color: String(rawWs.color || 'oxblood')
         }
       : { ...DEFAULT_WAX_SEAL };
 
@@ -132,7 +192,14 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
       inkColor,
       stickers: sanitizedStickers,
       ruledLines: raw.rl !== undefined ? Boolean(raw.rl) : (raw.ruledLines !== undefined ? Boolean(raw.ruledLines) : true),
-      waxSeal
+      waxSeal,
+      city: raw.city || raw.l || '',
+      stamp: raw.stamp !== undefined ? Number(raw.stamp) : (raw.k !== undefined ? Number(raw.k) : 0),
+      ps: raw.ps || raw.n || '',
+      unlockDate: raw.unlockDate || raw.o || '',
+      passphrase: raw.passphrase || raw.p || '',
+      fontSize: raw.fontSize || raw.g || 'm',
+      language: raw.language || (raw.e === 'hi' ? 'hi' : 'en')
     };
 
     return letter;

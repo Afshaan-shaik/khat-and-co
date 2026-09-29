@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { LetterData, PaperTemplate, FontOption, PlacedSticker } from './types/letter';
+import { LetterData, PaperTemplate, FontOption, PlacedSticker, WaxSealData } from './types/letter';
 import {
   loadSavedDraft,
   saveDraft,
@@ -13,25 +13,30 @@ import { createShortShareUrl, resolveSharedLetter } from './utils/shortLink';
 import { copyTextToClipboard } from './utils/clipboard';
 import { exportLetterAsPicture } from './utils/export';
 import { PAPER_TEMPLATES } from './constants/templates';
+import { DEFAULT_WAX_SEAL } from './constants/waxSeal';
 import { StickerDefinition } from './constants/stickers';
 
-// Components
+// Main Page Components (Claude HTML Architecture)
 import { Header } from './components/Header';
-import { TemplatePicker } from './components/TemplatePicker';
-import { FontPicker } from './components/FontPicker';
-import { LetterEditor } from './components/LetterEditor';
-import { StickerDrawer } from './components/StickerDrawer';
-import { EnvelopeModal } from './components/EnvelopeModal';
-import { PromptModal } from './components/PromptModal';
+import { HeroSection } from './components/HeroSection';
+import { StudioSection } from './components/StudioSection';
+import { ShelfSection } from './components/ShelfSection';
+import { NudgeSection } from './components/NudgeSection';
+import { SoundCursor } from './components/SoundCursor';
+import { ReaderModal } from './components/ReaderModal';
 
-// New feature components
+// Modal Overlays & Existing Feature Modules
 import { Studio } from './components/Studio';
-import { DEFAULT_WAX_SEAL } from './constants/waxSeal';
-import { VoiceWizard } from './components/VoiceWizard';
-import { InspireMe } from './components/InspireMe';
+import { EnvelopeModal } from './components/EnvelopeModal';
+import { YourDesk } from './components/YourDesk';
+import { PromptModal } from './components/PromptModal';
 import { TimeCapsuleManager } from './components/TimeCapsuleManager';
 import { SealedUntilFuture } from './components/SealedUntilFuture';
-import { YourDesk } from './components/YourDesk';
+
+// Expose encoder on window for automated test evaluation
+if (typeof window !== 'undefined') {
+  (window as any).encodeLetterToHash = encodeLetterToHash;
+}
 
 /**
  * Checks synchronously whether the current URL is a shared letter link.
@@ -74,9 +79,6 @@ export const App: React.FC = () => {
   // Recipient Received Letter state (from URL hash or query)
   const [recipientLetter, setRecipientLetter] = useState<LetterData | null>(getInitialRecipientLetter);
 
-  // Mobile active tab ('write' | 'paper' | 'stickers')
-  const [mobileTab, setMobileTab] = useState<'write' | 'paper' | 'stickers'>('write');
-
   // Recipient Flow state
   const [isRecipientFlow, setIsRecipientFlow] = useState<boolean>(hasIncomingShare);
   const [isEnvelopeOpen, setIsEnvelopeOpen] = useState<boolean>(hasIncomingShare);
@@ -85,23 +87,23 @@ export const App: React.FC = () => {
   });
   const [sharedLetterError, setSharedLetterError] = useState<boolean>(false);
 
-  // Modals state
-  const [isPromptOpen, setIsPromptOpen] = useState(false);
-  const [isExporting, setIsExporting] = useState(false);
+  // Reader Modal state (from Claude HTML reader preview)
+  const [readerLetter, setReaderLetter] = useState<LetterData | null>(null);
+  const [isReaderOpen, setIsReaderOpen] = useState<boolean>(false);
+  const [isPeekMode, setIsPeekMode] = useState<boolean>(false);
+  const [shelfTrigger, setShelfTrigger] = useState(0);
 
-  // New feature modals
+  // Feature Modals state
   const [isStudioOpen, setIsStudioOpen] = useState(false);
-  const [isVoiceWizardOpen, setIsVoiceWizardOpen] = useState(false);
+  const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [isTimeCapsuleOpen, setIsTimeCapsuleOpen] = useState(false);
   const [isSealedUntilFutureOpen, setIsSealedUntilFutureOpen] = useState(false);
   const [isYourDeskOpen, setIsYourDeskOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
-
-  // Ref to main letter paper sheet for picture export
-  const letterSheetRef = useRef<HTMLDivElement>(null);
 
   // Apply theme to document
   useEffect(() => {
@@ -155,7 +157,7 @@ export const App: React.FC = () => {
           setIsLoadingSharedLetter(false);
           setSharedLetterError(true);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setIsLoadingSharedLetter(false);
           setSharedLetterError(true);
@@ -205,31 +207,20 @@ export const App: React.FC = () => {
 
   // Add Sticker
   const handleAddSticker = (stickerDef: StickerDefinition) => {
-    const letterEl = letterSheetRef.current;
-    const letterRect = letterEl?.getBoundingClientRect();
-    const letterWidth = letterRect?.width || 640;
-    const stickerWidth = stickerDef.width || 80;
-    const stickerWidthPercent = (stickerWidth / letterWidth) * 100;
-    const centeredX = Math.round((50 - stickerWidthPercent / 2) * 10) / 10;
-    const count = letter.stickers.length;
+    const count = (letter.stickers || []).length;
     const placedY = Math.round(Math.min(36 + ((count % 5) * 6), 62) * 10) / 10;
 
     const newPlaced: PlacedSticker = {
       id: `stk_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       stickerId: stickerDef.id,
-      x: centeredX,
+      x: 50,
       y: placedY,
       scale: 1,
       rotation: 0,
-      zIndex: Math.max(...letter.stickers.map((s) => s.zIndex), 0) + 1
+      zIndex: Math.max(...(letter.stickers || []).map((s) => s.zIndex), 0) + 1
     };
 
-    handleUpdateLetter({ stickers: [...letter.stickers, newPlaced] });
-
-    if (typeof window !== 'undefined' && window.innerWidth <= 767) {
-      setMobileTab('write');
-    }
-
+    handleUpdateLetter({ stickers: [...(letter.stickers || []), newPlaced] });
     showToast(`Added "${stickerDef.name}" to your letter!`);
   };
 
@@ -270,18 +261,19 @@ export const App: React.FC = () => {
 
   // Save as Picture
   const handleSavePicture = async () => {
-    if (!letterSheetRef.current) return;
+    const paperEl = document.getElementById('paper');
+    if (!paperEl) return;
     try {
       setIsExporting(true);
-      showToast('Preparing your high-resolution stationery picture...');
-      await exportLetterAsPicture(letterSheetRef.current, {
+      showToast('Preparing your picture...');
+      await exportLetterAsPicture(paperEl, {
         fileName: 'khat-and-co-letter.png',
         pixelRatio: 3
       });
-      showToast('Letter downloaded as "khat-and-co-letter.png"!');
+      showToast('Letter downloaded!');
     } catch (err) {
       console.error(err);
-      showToast('Failed to save picture. Please try again.');
+      showToast('Failed to save picture.');
     } finally {
       setIsExporting(false);
     }
@@ -308,15 +300,6 @@ export const App: React.FC = () => {
 
   // Write Back action from recipient view
   const handleWriteBack = (senderName: string, templateId: string, fontId: string) => {
-    const confirmMsg =
-      letter.body.trim().length > 0 && letter.body !== loadSavedDraft().body
-        ? `Start a new reply letter to ${senderName || 'your friend'}? This will replace your current workspace letter.`
-        : null;
-
-    if (confirmMsg && !window.confirm(confirmMsg)) {
-      return;
-    }
-
     const replyLetter: LetterData = {
       recipient: senderName ? `For ${senderName}` : 'For You',
       date: getFormattedToday(),
@@ -349,7 +332,14 @@ export const App: React.FC = () => {
     setIsEnvelopeOpen(false);
     setIsRecipientFlow(false);
     setRecipientLetter(null);
+    setIsReaderOpen(false);
+    setReaderLetter(null);
     showToast(`Started reply to ${senderName || 'your friend'}!`);
+
+    const studioEl = document.getElementById('studio');
+    if (studioEl) {
+      studioEl.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleCloseEnvelope = () => {
@@ -361,266 +351,171 @@ export const App: React.FC = () => {
     }
   };
 
-  // Inspire Me — append prompt to letter body
-  const handleUsePrompt = (prompt: string) => {
-    const current = letter.body;
-    const addition = current.trim() ? `\n\n${prompt}` : prompt;
-    handleUpdateLetter({ body: current + addition });
-    showToast('✦ Inspiration added to your letter.');
+  // Reader Modal handlers
+  const handleOpenReader = (targetLetter: LetterData, opt?: { peek?: boolean }) => {
+    setReaderLetter(targetLetter);
+    setIsPeekMode(Boolean(opt?.peek));
+    setIsReaderOpen(true);
   };
 
-  const currentTemplate =
-    PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
+  const handleCloseReader = () => {
+    setIsReaderOpen(false);
+    setReaderLetter(null);
+  };
+
+  // ══════════════════════════════════════════════════════════════════════
+  // CRITICAL RECIPIENT FLOW GUARANTEE:
+  // When a recipient opens a shared letter link (?id=... or #l=...),
+  // the author desk (.workspace-layout) is NEVER rendered.
+  // The recipient sees strictly the sealed EnvelopeModal concealing the letter!
+  // ══════════════════════════════════════════════════════════════════════
+  if (isRecipientFlow) {
+    return (
+      <div className="app-shell recipient-mode">
+        <EnvelopeModal
+          isOpen={isEnvelopeOpen}
+          letter={recipientLetter}
+          onClose={handleCloseEnvelope}
+          onWriteBack={handleWriteBack}
+          isRecipientFlow={true}
+          isLoadingLetter={isLoadingSharedLetter}
+          loadError={sharedLetterError}
+        />
+        {toastMessage && (
+          <div className="khat-toast" role="status" aria-live="polite">
+            <span>{toastMessage}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className={`app-shell ${isRecipientFlow ? 'recipient-mode' : ''}`}>
-      {/*
-        CRITICAL RECIPIENT FLOW GUARANTEE:
-        When a recipient opens a shared letter link, the author desk, header, and
-        workspace are NEVER rendered.
-      */}
-      {!isRecipientFlow && (
-        <>
-          {/* Sticky Header */}
-          <Header
-            theme={theme}
-            onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            onOpenPrompt={() => setIsPromptOpen(true)}
-            onPreviewEnvelope={handlePreviewEnvelope}
-            onShareLink={handleShareLink}
-            onSavePicture={handleSavePicture}
-            isExporting={isExporting}
-            onOpenStudio={() => setIsStudioOpen(true)}
-            onOpenYourDesk={() => setIsYourDeskOpen(true)}
-            onOpenSealedUntilFuture={() => setIsSealedUntilFutureOpen(true)}
-            onOpenTimeCapsule={() => setIsTimeCapsuleOpen(true)}
-            onOpenVoiceWizard={() => setIsVoiceWizardOpen(true)}
-            onOpenInspireMe={() => {/* Inspire Me is inline in the sidebar and Studio */}}
+    <div className="app-shell">
+      <a className="skip" href="#studio">
+        Skip to the letter studio
+      </a>
+
+      {/* Top Navigation */}
+      <Header
+        theme={theme}
+        onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        onOpenStudio={() => setIsStudioOpen(true)}
+      />
+
+      {/* Main Workspace Layout */}
+      <div className="workspace-layout">
+        {/* Quick Author Action Controls Bar */}
+        <div className="container py-2 d-flex flex-wrap align-items-center gap-2" style={{ borderBottom: '1px solid var(--line)' }}>
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={() => setIsStudioOpen(true)}
+            title="Open Studio for full customization"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
+            </svg>
+            <span>Open Studio</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={handlePreviewEnvelope}
+            title="See it as your reader will (Envelope View)"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" />
+              <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10" />
+            </svg>
+            <span>See it as your reader will</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={handleShareLink}
+            title="Create an envelope link to send to your loved one"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span>Copy share link</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn ghost sm"
+            onClick={handleResetLetter}
+            title="Start a fresh letter"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+              <path d="M21 3v5h-5" />
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+              <path d="M8 16H3v5" />
+            </svg>
+            <span>Start a new letter</span>
+          </button>
+        </div>
+
+        <main id="top">
+          {/* Hero Section with interactive 3D Hero Envelope */}
+          <HeroSection />
+
+          {/* 3-Step Letter Studio Workflow (Write, Seal, Send) */}
+          <StudioSection
+            letter={letter}
+            onChangeLetter={handleUpdateLetter}
+            onOpenReader={handleOpenReader}
+            onLetterSealed={() => setShelfTrigger((prev) => prev + 1)}
+            showToast={showToast}
           />
 
-          {/* Mobile Tab Bar (<960px) */}
-          <nav className="mobile-tab-bar d-flex d-md-none" aria-label="Mobile navigation tabs">
-            <button
-              type="button"
-              className={`mobile-tab-btn ${mobileTab === 'paper' ? 'active' : ''}`}
-              onClick={() => setMobileTab('paper')}
-            >
-              Paper & Ink
-            </button>
-            <button
-              type="button"
-              className={`mobile-tab-btn ${mobileTab === 'write' ? 'active' : ''}`}
-              onClick={() => setMobileTab('write')}
-            >
-              Write Letter
-            </button>
-            <button
-              type="button"
-              className={`mobile-tab-btn ${mobileTab === 'stickers' ? 'active' : ''}`}
-              onClick={() => setMobileTab('stickers')}
-            >
-              Stickers ({letter.stickers.length})
-            </button>
-          </nav>
+          {/* The Shelf Section with fanned-out envelope stack */}
+          <ShelfSection
+            onOpenLetter={(l) => handleOpenReader(l, { peek: false })}
+            sentLettersTrigger={shelfTrigger}
+          />
 
-          {/* Two-column workspace */}
-          <div className="workspace-layout">
+          {/* The Weekly Nudge Section with Google Calendar reminder */}
+          <NudgeSection />
+        </main>
 
-            {/* ── LEFT SIDEBAR PANEL ── */}
-            <aside
-              className={`sidebar-panel ${mobileTab !== 'write' ? 'mobile-visible' : ''}`}
-              data-testid="left-panel"
-              aria-label="Letter customization panel"
-            >
-
-              {/* Paper Stationery Picker */}
-              <section
-                className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
-                aria-labelledby="paper-section-label"
+        {/* Footer */}
+        <footer>
+          <div className="container">
+            <span>Khath &amp; Co. Made for slow mail.</span>
+            <span>
+              Letters live inside their links. ·{' '}
+              <a
+                href="https://github.com/Afshaan-shaik"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ textDecoration: 'underline' }}
               >
-                <div className="section-label" id="paper-section-label">
-                  <span>Paper</span>
-                </div>
-                <TemplatePicker
-                  selectedTemplateId={letter.templateId}
-                  onSelectTemplate={handleSelectTemplate}
-                />
-              </section>
-
-              {/* Handwriting Font & Ink Picker */}
-              <section
-                className={`sidebar-section ${mobileTab === 'stickers' ? 'd-none d-md-block' : ''}`}
-                aria-labelledby="font-section-label"
-              >
-                <FontPicker
-                  selectedFontId={letter.fontId}
-                  onSelectFont={handleSelectFont}
-                  selectedInk={letter.inkColor}
-                  onSelectInk={handleSelectInk}
-                  isDarkPaper={currentTemplate.isDarkPaper}
-                  ruledLines={letter.ruledLines}
-                  onToggleRuledLines={handleToggleRuledLines}
-                />
-              </section>
-
-              {/* Sticker & Stamp Collection */}
-              <section
-                className={`sidebar-section sticker-docked-section ${mobileTab === 'paper' ? 'd-none d-md-block' : ''}`}
-                aria-labelledby="sticker-section-label"
-              >
-                <div className="section-label" id="sticker-section-label">
-                  <span>Stickers & Stamps</span>
-                </div>
-                <StickerDrawer
-                  onAddSticker={handleAddSticker}
-                  stickerCount={letter.stickers.length}
-                  inlineSidebar
-                />
-              </section>
-
-              {/* ── Sidebar: Inspire Me (desktop inline) ── */}
-              <section className="sidebar-section d-none d-md-block" aria-labelledby="inspire-sidebar-label">
-                <div className="section-label" id="inspire-sidebar-label">
-                  <span>✦ Inspiration</span>
-                </div>
-                <InspireMe onUsePrompt={handleUsePrompt} />
-              </section>
-
-            </aside>
-
-            {/* ── RIGHT STAGE DESK ── */}
-            <main
-              className={`editor-column ${mobileTab === 'write' ? 'mobile-visible' : ''}`}
-              data-testid="stage"
-              aria-label="Letter writing area"
-            >
-              {/* Voice Wizard — inline above editor on mobile when triggered */}
-              {isVoiceWizardOpen && (
-                <div className="editor-voice-wizard-wrap">
-                  <VoiceWizard
-                    isOpen={isVoiceWizardOpen}
-                    onClose={() => setIsVoiceWizardOpen(false)}
-                  />
-                </div>
-              )}
-
-              <LetterEditor
-                letter={letter}
-                onChangeLetter={handleUpdateLetter}
-                letterSheetRef={letterSheetRef}
-              />
-
-              {/* Desk Actions */}
-              <div className="desk-actions" role="toolbar" aria-label="Letter actions">
-                <button
-                  type="button"
-                  className="btn-khat-primary"
-                  onClick={handleSavePicture}
-                  disabled={isExporting}
-                  title="Save the finished letter as a picture"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  <span>{isExporting ? 'Saving...' : 'Save as picture'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-khat-secondary"
-                  onClick={() => setIsStudioOpen(true)}
-                  title="Open Studio for premium letter creation"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
-                  </svg>
-                  <span>Open Studio</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-khat-secondary"
-                  onClick={handlePreviewEnvelope}
-                  title="See it as your reader will (Envelope View)"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" />
-                    <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10" />
-                  </svg>
-                  <span>See it as your reader will</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-khat-secondary"
-                  onClick={handleShareLink}
-                  title="Create an envelope link to send to your loved one"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                  </svg>
-                  <span>Copy share link</span>
-                </button>
-
-                <button
-                  type="button"
-                  className="btn-khat-secondary"
-                  onClick={handleResetLetter}
-                  title="Start a fresh letter"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                    <path d="M21 3v5h-5" />
-                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                    <path d="M8 16H3v5" />
-                  </svg>
-                  <span>Start a new letter</span>
-                </button>
-              </div>
-
-              {/* Footer branding */}
-              <footer className="app-footer">
-                <div className="app-footer-brand">
-                  <p className="app-footer-name">
-                    Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&</span> Co.
-                  </p>
-                  <p className="app-footer-tagline">
-                    खत · letters for the people you miss · Free, no-login digital stationery
-                  </p>
-                  <p className="app-footer-tagline" style={{ marginTop: '6px', opacity: 0.75, fontSize: '12px' }}>
-                    Seal it, leave your voice, or send it into the future.
-                  </p>
-                </div>
-                <div className="app-footer-credit-row">
-                  <p className="app-footer-credit">
-                    <span className="credit-label">crafted by -</span>
-                    <a
-                      href="https://github.com/Afshaan-shaik"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="app-footer-author"
-                      title="Afshaan Shaik on GitHub"
-                      aria-label="Crafted by Afshaan Shaik (opens GitHub profile)"
-                    >
-                      Afshaan Shaik
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ opacity: 0.85 }}>
-                        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-                      </svg>
-                    </a>
-                  </p>
-                </div>
-              </footer>
-            </main>
+                Crafted by Afshaan Shaik
+              </a>
+            </span>
           </div>
-        </>
-      )}
+        </footer>
+      </div>
 
-      {/* ══════════════ FEATURE MODALS & OVERLAYS ══════════════ */}
+      {/* Fine-Pointer Custom Cursor and Sound Toggle */}
+      <SoundCursor />
 
-      {/* Studio */}
+      {/* 3D Reader Modal for unsealing letters */}
+      <ReaderModal
+        isOpen={isReaderOpen}
+        letter={readerLetter}
+        onClose={handleCloseReader}
+        onWriteBack={handleWriteBack}
+        isPeek={isPeekMode}
+      />
+
+      {/* Studio Modal */}
       <Studio
         isOpen={isStudioOpen}
         onClose={() => setIsStudioOpen(false)}
@@ -632,34 +527,45 @@ export const App: React.FC = () => {
         onToggleRuledLines={handleToggleRuledLines}
         onAddSticker={handleAddSticker}
         sealData={letter.waxSeal}
-        onChangeSeal={(newSeal) => handleUpdateLetter({ waxSeal: newSeal })}
-        onPreviewEnvelope={() => { setIsStudioOpen(false); handlePreviewEnvelope(); }}
+        onChangeSeal={(newSeal: WaxSealData) => handleUpdateLetter({ waxSeal: newSeal })}
+        onPreviewEnvelope={() => {
+          setIsStudioOpen(false);
+          handlePreviewEnvelope();
+        }}
         onShareLink={handleShareLink}
         onSavePicture={handleSavePicture}
         isExporting={isExporting}
       />
 
-      {/* Your Desk */}
+      {/* Animated Envelope Reading Modal for Preview */}
+      <EnvelopeModal
+        isOpen={isEnvelopeOpen}
+        letter={recipientLetter || letter}
+        onClose={handleCloseEnvelope}
+        onWriteBack={handleWriteBack}
+        isRecipientFlow={false}
+        isLoadingLetter={false}
+        loadError={false}
+      />
+
+      {/* Your Desk Modal */}
       <YourDesk
         isOpen={isYourDeskOpen}
         onClose={() => setIsYourDeskOpen(false)}
         letter={letter}
         onEditDraft={() => setIsYourDeskOpen(false)}
-        onPreviewEnvelope={() => { setIsYourDeskOpen(false); handlePreviewEnvelope(); }}
-        onOpenSealedUntilFuture={() => { setIsYourDeskOpen(false); setIsSealedUntilFutureOpen(true); }}
-        onOpenTimeCapsule={() => { setIsYourDeskOpen(false); setIsTimeCapsuleOpen(true); }}
-      />
-
-      {/* Sealed Until Future */}
-      <SealedUntilFuture
-        isOpen={isSealedUntilFutureOpen}
-        onClose={() => setIsSealedUntilFutureOpen(false)}
-      />
-
-      {/* Letter Time Capsule */}
-      <TimeCapsuleManager
-        isOpen={isTimeCapsuleOpen}
-        onClose={() => setIsTimeCapsuleOpen(false)}
+        onPreviewEnvelope={() => {
+          setIsYourDeskOpen(false);
+          handlePreviewEnvelope();
+        }}
+        onOpenSealedUntilFuture={() => {
+          setIsYourDeskOpen(false);
+          setIsSealedUntilFutureOpen(true);
+        }}
+        onOpenTimeCapsule={() => {
+          setIsYourDeskOpen(false);
+          setIsTimeCapsuleOpen(true);
+        }}
       />
 
       {/* Weekly Writing Prompts Modal */}
@@ -668,21 +574,32 @@ export const App: React.FC = () => {
         onClose={() => setIsPromptOpen(false)}
       />
 
-      {/* Animated Envelope Reading Modal */}
-      <EnvelopeModal
-        isOpen={isEnvelopeOpen}
-        letter={recipientLetter || (isRecipientFlow ? null : letter)}
-        onClose={handleCloseEnvelope}
-        onWriteBack={handleWriteBack}
-        isRecipientFlow={isRecipientFlow}
-        isLoadingLetter={isLoadingSharedLetter}
-        loadError={sharedLetterError}
+      {/* Sealed Until Future Modal */}
+      <SealedUntilFuture
+        isOpen={isSealedUntilFutureOpen}
+        onClose={() => setIsSealedUntilFutureOpen(false)}
       />
 
-      {/* Floating Toast Notifications */}
+      {/* Time Capsule Modal */}
+      <TimeCapsuleManager
+        isOpen={isTimeCapsuleOpen}
+        onClose={() => setIsTimeCapsuleOpen(false)}
+      />
+
+      {/* Floating Toast Notification */}
       {toastMessage && (
         <div className="khat-toast" role="status" aria-live="polite">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FAD889" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#FAD889"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
             <circle cx="12" cy="12" r="10" />
             <path d="m9 12 2 2 4-4" />
           </svg>

@@ -1241,6 +1241,282 @@ export const STICKER_REGISTRY: Record<string, StickerDefinition> = {
         <path d="M44 38 L43.4 37.4 C41.8 35.8 40.8 35 40.8 33.8 C40.8 32.8 41.6 32 42.6 32 C43.1 32 43.6 32.3 43.9 32.7 C44.2 32.3 44.7 32 45.2 32 C46.2 32 47 32.8 47 33.8 C47 35 46 35.8 44.4 37.4 L44 38Z" fill="#B4455A"/>
       </svg>
     )
+  },
+
+  // -------------------------------------------------------------
+  // CLAUDE STUDIO PACK STICKERS
+  // -------------------------------------------------------------
+  'marigold': {
+    id: 'marigold',
+    name: 'Marigold',
+    category: 'sky-garden-tape',
+    width: 68,
+    height: 68,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        {Array.from({ length: 14 }, (_, i) => (
+          <ellipse key={`m1_${i}`} cx="50" cy="25" rx="7" ry="14" fill="#E8892B" transform={`rotate(${i * 360 / 14} 50 50)`} />
+        ))}
+        {Array.from({ length: 14 }, (_, i) => (
+          <ellipse key={`m2_${i}`} cx="50" cy="35" rx="6" ry="11" fill="#F5B83D" transform={`rotate(${i * 360 / 14 + 13} 50 50)`} />
+        ))}
+        <circle cx="50" cy="50" r="7" fill="#A9521B" />
+      </svg>
+    )
+  },
+  'daisy-white': {
+    id: 'daisy-white',
+    name: 'Daisy White',
+    category: 'sky-garden-tape',
+    width: 68,
+    height: 68,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, i) => (
+          <ellipse key={`d_${i}`} cx="50" cy="26" rx="5.5" ry="16" fill="#FFFDF6" stroke="#D8D0BD" strokeWidth="0.8" transform={`rotate(${i * 360 / 12} 50 50)`} />
+        ))}
+        <circle cx="50" cy="50" r="9" fill="#F1C232" />
+      </svg>
+    )
+  },
+  'poppy': {
+    id: 'poppy',
+    name: 'Poppy',
+    category: 'sky-garden-tape',
+    width: 68,
+    height: 68,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        {Array.from({ length: 5 }, (_, i) => (
+          <ellipse key={`p1_${i}`} cx="50" cy="36" rx="17" ry="18" fill="#D9455A" transform={`rotate(${i * 360 / 5} 50 50)`} />
+        ))}
+        {Array.from({ length: 5 }, (_, i) => (
+          <ellipse key={`p2_${i}`} cx="50" cy="38" rx="12" ry="13" fill="#EA6B7C" transform={`rotate(${i * 360 / 5 + 36} 50 50)`} />
+        ))}
+        <circle cx="50" cy="50" r="6" fill="#3A1F2B" />
+      </svg>
+    )
+  },
+  'lavender': {
+    id: 'lavender',
+    name: 'Lavender',
+    category: 'sky-garden-tape',
+    width: 50,
+    height: 72,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 96C50 70 52 44 50 10" stroke="#5F7F4F" strokeWidth="2.4" fill="none" strokeLinecap="round" />
+        {Array.from({ length: 8 }, (_, i) => {
+          const y = 16 + i * 8.5;
+          return (
+            <g key={`lav_${i}`}>
+              <ellipse cx="43" cy={y} rx="5" ry="3" fill="#8C6BB8" transform={`rotate(-30 43 ${y})`} />
+              <ellipse cx="57" cy={y} rx="5" ry="3" fill="#9C7CC6" transform={`rotate(30 57 ${y})`} />
+            </g>
+          );
+        })}
+        <ellipse cx="50" cy="9" rx="3" ry="5" fill="#8C6BB8" />
+      </svg>
+    )
+  },
+  'sprig': {
+    id: 'sprig',
+    name: 'Leaf Sprig',
+    category: 'sky-garden-tape',
+    width: 55,
+    height: 72,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 96C48 70 52 40 50 12" stroke="#5E7F4E" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+        {Array.from({ length: 5 }, (_, i) => {
+          const y = 84 - i * 16;
+          const f = i % 2 ? '#83A46F' : '#6B8F5A';
+          return (
+            <g key={`spr_${i}`}>
+              <ellipse cx="37" cy={y} rx="12" ry="5" fill={f} transform={`rotate(-35 37 ${y})`} />
+              <ellipse cx="63" cy={y - 6} rx="12" ry="5" fill={f} transform={`rotate(35 63 ${y - 6})`} />
+            </g>
+          );
+        })}
+        <ellipse cx="50" cy="13" rx="5" ry="10" fill="#6B8F5A" />
+      </svg>
+    )
+  },
+  'fern': {
+    id: 'fern',
+    name: 'Fern',
+    category: 'sky-garden-tape',
+    width: 55,
+    height: 72,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 96Q44 50 56 8" stroke="#3F6A48" strokeWidth="2" fill="none" strokeLinecap="round" />
+        {Array.from({ length: 10 }, (_, t) => {
+          const y = 88 - t * 8.2;
+          const x = 48 + t * 0.7;
+          const len = 14 - t * 0.9;
+          const lrx = len / 2;
+          return (
+            <g key={`fern_${t}`}>
+              <ellipse cx={x - lrx} cy={y - 2} rx={lrx} ry="2.4" fill="#4F7A55" transform={`rotate(-25 ${x - lrx} ${y - 2})`} />
+              <ellipse cx={x + lrx} cy={y - 2} rx={lrx} ry="2.4" fill="#5C8A62" transform={`rotate(25 ${x + lrx} ${y - 2})`} />
+            </g>
+          );
+        })}
+      </svg>
+    )
+  },
+  'heart': {
+    id: 'heart',
+    name: 'Heart',
+    category: 'hearts-seals',
+    width: 60,
+    height: 60,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" fill="#C7364A" />
+        <ellipse cx="34" cy="40" rx="6" ry="3.5" fill="#fff" opacity="0.35" transform="rotate(-35 34 40)" />
+      </svg>
+    )
+  },
+  'doodle': {
+    id: 'doodle',
+    name: 'Doodle Heart',
+    category: 'hearts-seals',
+    width: 60,
+    height: 60,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" fill="none" stroke="#B3283A" strokeWidth="3.6" strokeLinejoin="round" strokeLinecap="round" />
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" fill="none" stroke="#B3283A" strokeWidth="1.4" opacity="0.55" transform="translate(2.5 2) rotate(2 50 56)" />
+      </svg>
+    )
+  },
+  'sparkle': {
+    id: 'sparkle',
+    name: 'Sparkle',
+    category: 'hearts-seals',
+    width: 55,
+    height: 55,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 8C53 34 66 47 92 50C66 53 53 66 50 92C47 66 34 53 8 50C34 47 47 34 50 8Z" fill="#D9A93E" />
+        <path d="M50 8C53 34 66 47 92 50C66 53 53 66 50 92C47 66 34 53 8 50C34 47 47 34 50 8Z" fill="#EBC96A" transform="translate(68 4) scale(.26)" />
+      </svg>
+    )
+  },
+  'moon': {
+    id: 'moon',
+    name: 'Moon',
+    category: 'hearts-seals',
+    width: 55,
+    height: 55,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M62 14A38 38 0 1 0 86 62A30 30 0 0 1 62 14Z" fill="#E9C46A" />
+        <path d="M50 8C51 16 54 19 62 20C54 21 51 24 50 32C49 24 46 21 38 20C46 19 49 16 50 8Z" fill="#E9C46A" transform="translate(30 4) scale(.5)" />
+      </svg>
+    )
+  },
+  'loveenv': {
+    id: 'loveenv',
+    name: 'Love Note',
+    category: 'hearts-seals',
+    width: 68,
+    height: 55,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <rect x="10" y="28" width="80" height="48" rx="4" fill="#F7EFE0" stroke="#1F2340" strokeWidth="2.4" />
+        <path d="M10 32L50 58L90 32" fill="none" stroke="#1F2340" strokeWidth="2.4" strokeLinejoin="round" />
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" transform="translate(38.5 46) scale(.24)" fill="#C7364A" />
+      </svg>
+    )
+  },
+  'trio': {
+    id: 'trio',
+    name: 'Little Hearts',
+    category: 'hearts-seals',
+    width: 68,
+    height: 55,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" transform="translate(6 34) scale(.5)" fill="#E58A98" />
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" transform="translate(30 4) scale(.66)" fill="#C7364A" />
+        <path d="M50 86C14 60 16 26 36 26C44 26 50 32 50 38C50 32 56 26 64 26C84 26 86 60 50 86Z" transform="translate(50 46) scale(.44)" fill="#F1A9B4" />
+      </svg>
+    )
+  },
+  'washi': {
+    id: 'washi',
+    name: 'Washi Tape',
+    category: 'little-things-words',
+    width: 90,
+    height: 40,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M8 36H92L88 41L92 46L88 51L92 56L88 61L92 64H8L12 59L8 54L12 49L8 44L12 39Z" fill="#F3B8C1" opacity="0.88" />
+        {Array.from({ length: 7 }, (_, i) => (
+          <rect key={`w_${i}`} x={16 + i * 11} y="36" width="5" height="28" fill="#fff" opacity="0.5" />
+        ))}
+      </svg>
+    )
+  },
+  'polaroid': {
+    id: 'polaroid',
+    name: 'Polaroid',
+    category: 'little-things-words',
+    width: 70,
+    height: 84,
+    render: () => (
+      <svg viewBox="0 0 100 118" width="100%" height="100%" aria-hidden="true">
+        <rect x="3" y="3" width="94" height="112" fill="#FBF8F0" stroke="#D9D2C0" />
+        <rect x="10" y="10" width="80" height="80" fill="#BFD9E8" />
+        <circle cx="68" cy="34" r="9" fill="#F2C14E" />
+        <path d="M10 90V66C28 50 40 62 54 56C68 50 78 58 90 64V90Z" fill="#6D9A6A" />
+        <path d="M10 90V78C30 68 60 84 90 74V90Z" fill="#4F7F58" />
+        <path d="M24 102C34 96 40 108 52 100C62 94 70 106 78 99" stroke="#6B6F85" strokeWidth="2" fill="none" strokeLinecap="round" />
+      </svg>
+    )
+  },
+  'ticket': {
+    id: 'ticket',
+    name: 'Ticket',
+    category: 'little-things-words',
+    width: 80,
+    height: 50,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M6 28H94V42A8 8 0 0 0 94 58V72H6V58A8 8 0 0 0 6 42Z" fill="#E7B35A" />
+        <path d="M72 30V70" stroke="#8A5F1A" strokeDasharray="3 3" />
+        <text x="38" y="56" text-anchor="middle" font-family="Caveat,cursive" font-size="22" fill="#5A3A0D">for you</text>
+      </svg>
+    )
+  },
+  'sticky': {
+    id: 'sticky',
+    name: 'Sticky Note',
+    category: 'little-things-words',
+    width: 65,
+    height: 65,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M14 14H86V70L70 86H14Z" fill="#F6E27F" />
+        <path d="M86 70H70V86Z" fill="#DCC85E" />
+        <path d="M24 34H72M24 46H64M24 58H50" stroke="#8A7A2A" strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    )
+  },
+  'clip': {
+    id: 'clip',
+    name: 'Paper Clip',
+    category: 'little-things-words',
+    width: 45,
+    height: 70,
+    render: () => (
+      <svg viewBox="0 0 100 100" width="100%" height="100%" aria-hidden="true">
+        <path d="M70 24L36 58C29 65 38 74 45 67L78 34C88 24 74 10 64 20L28 56C14 70 34 90 48 76L72 52" fill="none" stroke="#8C93A6" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
   }
 };
 
