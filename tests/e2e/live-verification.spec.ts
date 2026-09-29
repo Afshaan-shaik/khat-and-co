@@ -195,6 +195,39 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
     await page.screenshot({ path: 'test-results/live-scrolled-header.png' });
   });
 
+  test('verifies live PDF download directly from live Vercel deployment with full visual fidelity', async ({ page }) => {
+    const testLetter: LetterData = {
+      ...createDefaultLetter(),
+      recipient: 'Zara',
+      sender: 'Dev',
+      templateId: 'airmail-classic',
+      fontId: 'caveat',
+      ruledLines: true,
+      body: 'Testing live production PDF download on Khath & Co.',
+      signoff: 'With love,',
+      waxSeal: { id: 'heart', symbol: '♡', isCustom: false, color: 'oxblood' }
+    };
+
+    const hash = encodeLetterToHash(testLetter);
+    await page.goto(`https://khath-and-co.vercel.app/#l=${hash}`);
+    await page.evaluate(() => document.fonts.ready);
+
+    const sealBtn = page.getByTestId('envelope-wax-seal');
+    await expect(sealBtn).toBeVisible();
+    await sealBtn.click();
+
+    const pdfBtn = page.getByTestId('save-pdf-btn');
+    await expect(pdfBtn).toBeVisible({ timeout: 8000 });
+
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await pdfBtn.click();
+
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe('khat-letter-Zara.pdf');
+
+    const filePath = await download.path();
+    expect(filePath).toBeTruthy();
+  });
 });
 
 
