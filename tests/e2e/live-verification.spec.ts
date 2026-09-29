@@ -70,4 +70,56 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
     await page.screenshot({ path: 'test-results/live-author-desk.png' });
   });
 
+  test('exercises live studio step 3 and opens peek reader modal matching images 1, 2, 3', async ({ page }) => {
+    await page.goto('https://khath-and-co.vercel.app/');
+    await page.evaluate(() => document.fonts.ready);
+
+    // Scroll to studio
+    const studio = page.locator('#studio');
+    await studio.scrollIntoViewIfNeeded();
+
+    // Fill in letter text
+    const inText = page.locator('#inText');
+    await inText.fill('Writing you this weekly note with warm memories and gentle thoughts.');
+
+    // Continue to envelope
+    await page.locator('#toSeal').click();
+    await page.waitForTimeout(400);
+
+    // Press the seal
+    await page.locator('#pressSeal').click();
+    // Wait for sealing animation to transition to step 3
+    await page.waitForSelector('#sendBody:not([hidden])', { timeout: 10000 });
+
+    // Verify Step 3 buttons
+    await expect(page.locator('#waBtn')).toBeVisible();
+    await expect(page.locator('#pdfBtn')).toHaveText('Save as PDF');
+    await expect(page.locator('#peekBtn')).toHaveText('Open it as they will');
+
+    // Screenshot Step 3 (matching Image 1)
+    await page.screenshot({ path: 'test-results/live-step3-send.png' });
+
+    // Click 'Open it as they will'
+    await page.locator('#peekBtn').click();
+
+    // Verify Reader modal opens in peek mode (matching Image 2)
+    const reader = page.locator('.reader');
+    await expect(reader).toBeVisible();
+    await expect(page.locator('.reader-msg')).toHaveText('This is how it opens for them. Tap the seal.');
+    await page.screenshot({ path: 'test-results/live-reader-peek-sealed.png' });
+
+    // Tap wax seal
+    const sealBtn = reader.locator('.env-seal');
+    await sealBtn.click({ force: true });
+
+    // Verify Reader letter appears with buttons (matching Image 3)
+    await expect(page.locator('.reader-letter')).toBeVisible({ timeout: 6000 });
+    await expect(page.locator('#rPdf')).toHaveText('Save as PDF');
+    await expect(page.locator('#rBack')).toBeVisible();
+
+    // Screenshot unsealed view (matching Image 3)
+    await page.screenshot({ path: 'test-results/live-reader-peek-opened.png' });
+  });
+
 });
+
