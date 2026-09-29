@@ -32,6 +32,8 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
   const [isPsTorn, setIsPsTorn] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const paperRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +45,8 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
       setPassError(false);
       setIsPsTorn(false);
       setIsShaking(false);
+      setIsDownloadingPdf(false);
+      setDownloadSuccess(false);
     } else {
       setStageState('sealed');
       setIsPassVerified(!letter?.passphrase);
@@ -137,9 +141,6 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
       setPassError(true);
     }
   };
-
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
-  const [downloadSuccess, setDownloadSuccess] = useState(false);
 
   const handleSavePdf = async () => {
     if (!paperRef.current) {

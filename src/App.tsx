@@ -23,6 +23,7 @@ import { ShelfSection } from './components/ShelfSection';
 import { NudgeSection } from './components/NudgeSection';
 import { SoundCursor } from './components/SoundCursor';
 import { ReaderModal } from './components/ReaderModal';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Modal Overlays & Existing Feature Modules
 import { Studio } from './components/Studio';
@@ -36,19 +37,25 @@ if (typeof window !== 'undefined') {
   (window as any).encodeLetterToHash = encodeLetterToHash;
 }
 
+const APP_SECTION_HASHES = new Set(['#studio', '#shelf', '#nudge', '#top', '#step1', '#step2', '#step3', '#write']);
+
+/**
+ * Checks whether a given hash and search query represent an actual letter share link.
+ * Prevents section navigation anchors like #studio or #shelf from being misidentified.
+ */
+function isLetterShareUrl(hash: string, search: string): boolean {
+  if (search.includes('id=') || search.includes('l=')) return true;
+  if (hash.startsWith('#l=') || hash.startsWith('#letter=') || hash.startsWith('#id=')) return true;
+  if (hash.length > 25 && !APP_SECTION_HASHES.has(hash)) return true;
+  return false;
+}
+
 /**
  * Checks synchronously whether the current URL is a shared letter link.
  */
 function hasIncomingShare(): boolean {
   if (typeof window === 'undefined') return false;
-  const search = window.location.search || '';
-  const hash = window.location.hash || '';
-  return Boolean(
-    search.includes('id=') ||
-    hash.startsWith('#id=') ||
-    hash.startsWith('#l=') ||
-    (hash.length > 5 && !hash.startsWith('#id='))
-  );
+  return isLetterShareUrl(window.location.hash || '', window.location.search || '');
 }
 
 /**
@@ -57,7 +64,9 @@ function hasIncomingShare(): boolean {
 function getInitialRecipientLetter(): LetterData | null {
   if (typeof window === 'undefined') return null;
   const hash = window.location.hash || '';
-  if (hash.startsWith('#l=') || (hash.length > 5 && !hash.startsWith('#id='))) {
+  const search = window.location.search || '';
+  if (!isLetterShareUrl(hash, search)) return null;
+  if (hash.startsWith('#l=') || (hash.length > 25 && !APP_SECTION_HASHES.has(hash))) {
     try {
       return decodeLetterFromHash(hash);
     } catch {
@@ -131,12 +140,10 @@ export const App: React.FC = () => {
     let cancelled = false;
 
     const checkShared = async () => {
-      const hash = window.location.hash;
-      const search = window.location.search;
-      const isLetterHash = hash.startsWith('#l=') || hash.startsWith('#letter=') || hash.startsWith('#id=') || (hash.length > 25 && !['#studio', '#shelf', '#nudge', '#top', '#step1', '#step2', '#step3'].includes(hash));
-      const isLetterSearch = search.includes('id=') || search.includes('l=');
+      const hash = window.location.hash || '';
+      const search = window.location.search || '';
 
-      if (!isLetterHash && !isLetterSearch) {
+      if (!isLetterShareUrl(hash, search)) {
         setIsRecipientFlow(false);
         setSharedLetterError(false);
         setIsLoadingSharedLetter(false);
@@ -364,27 +371,30 @@ export const App: React.FC = () => {
   // ══════════════════════════════════════════════════════════════════════
   if (isRecipientFlow) {
     return (
-      <div className="app-shell recipient-mode">
-        <ReaderModal
-          isOpen={true}
-          letter={recipientLetter}
-          onClose={handleCloseEnvelope}
-          onWriteBack={handleWriteBack}
-          isPeek={false}
-          isLoading={isLoadingSharedLetter}
-          loadError={sharedLetterError}
-        />
-        {toastMessage && (
-          <div className="khat-toast" role="status" aria-live="polite">
-            <span>{toastMessage}</span>
-          </div>
-        )}
-      </div>
+      <ErrorBoundary>
+        <div className="app-shell recipient-mode">
+          <ReaderModal
+            isOpen={true}
+            letter={recipientLetter}
+            onClose={handleCloseEnvelope}
+            onWriteBack={handleWriteBack}
+            isPeek={false}
+            isLoading={isLoadingSharedLetter}
+            loadError={sharedLetterError}
+          />
+          {toastMessage && (
+            <div className="khat-toast" role="status" aria-live="polite">
+              <span>{toastMessage}</span>
+            </div>
+          )}
+        </div>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <div className="app-shell">
+    <ErrorBoundary>
+      <div className="app-shell">
       <a className="skip" href="#studio">
         Skip to the letter studio
       </a>
@@ -536,5 +546,6 @@ export const App: React.FC = () => {
         </div>
       )}
     </div>
+    </ErrorBoundary>
   );
 };
