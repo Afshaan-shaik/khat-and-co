@@ -2061,6 +2061,41 @@ select {
   user-select: none;
 }
 
+.studio-preview-toggle-btns {
+  display: flex;
+  background: var(--ui-input-bg);
+  border: 1px solid var(--ui-panel-border);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.studio-preview-tab-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ui-text-muted);
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.studio-preview-tab-btn:hover {
+  color: var(--ui-text-bright);
+}
+
+.studio-preview-tab-btn.active {
+  background: var(--ui-btn-secondary-bg);
+  color: var(--ui-text-bright);
+}
+
+.studio-preview-envelope-wrap {
+  width: 100%;
+}
+
 /* Mobile: Studio stacks vertically */
 @media (max-width: 767px) {
   .studio-backdrop {

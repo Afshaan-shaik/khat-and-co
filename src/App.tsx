@@ -26,7 +26,7 @@ import { PromptModal } from './components/PromptModal';
 
 // New feature components
 import { Studio } from './components/Studio';
-import { WaxSealData } from './components/WaxSealPicker';
+import { DEFAULT_WAX_SEAL } from './constants/waxSeal';
 import { VoiceWizard } from './components/VoiceWizard';
 import { InspireMe } from './components/InspireMe';
 import { TimeCapsuleManager } from './components/TimeCapsuleManager';
@@ -95,13 +95,6 @@ export const App: React.FC = () => {
   const [isTimeCapsuleOpen, setIsTimeCapsuleOpen] = useState(false);
   const [isSealedUntilFutureOpen, setIsSealedUntilFutureOpen] = useState(false);
   const [isYourDeskOpen, setIsYourDeskOpen] = useState(false);
-
-  // Wax seal data (persisted per session)
-  const [sealData, setSealData] = useState<WaxSealData>({
-    symbol: '♡',
-    isCustom: false,
-    customText: 'A',
-  });
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -335,6 +328,7 @@ export const App: React.FC = () => {
       fontId: fontId || 'caveat',
       inkColor: PAPER_TEMPLATES.find((t) => t.id === templateId)?.defaultInk || '#1F2340',
       ruledLines: true,
+      waxSeal: { ...DEFAULT_WAX_SEAL },
       stickers: [
         {
           id: 'reply_seal',
@@ -637,8 +631,8 @@ export const App: React.FC = () => {
         onSelectInk={handleSelectInk}
         onToggleRuledLines={handleToggleRuledLines}
         onAddSticker={handleAddSticker}
-        sealData={sealData}
-        onChangeSeal={setSealData}
+        sealData={letter.waxSeal}
+        onChangeSeal={(newSeal) => handleUpdateLetter({ waxSeal: newSeal })}
         onPreviewEnvelope={() => { setIsStudioOpen(false); handlePreviewEnvelope(); }}
         onShareLink={handleShareLink}
         onSavePicture={handleSavePicture}

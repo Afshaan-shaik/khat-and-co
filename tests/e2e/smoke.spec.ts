@@ -80,16 +80,16 @@ test.describe('End-to-End User Smoke Flows', () => {
     await waitForPageReady(page);
 
     // 6. Weekly prompt modal
-    const promptBtn = page.getByRole('button', { name: /weekly prompt|prompt/i });
+    const promptBtn = page.getByRole('button', { name: /weekly prompt|prompt/i }).first();
     await promptBtn.click();
-    const promptModal = page.locator('[role="dialog"]');
+    const promptModal = page.locator('[aria-labelledby="prompt-modal-title"]');
     await expect(promptModal).toBeVisible();
     // Close modal
     const closeBtn = promptModal.locator('.btn-close, button:has-text("Close")').first();
     await closeBtn.click();
 
     // 7. Reader Preview modal & wax seal opening
-    const previewBtn = page.getByRole('button', { name: /reader preview|preview/i });
+    const previewBtn = page.getByRole('button', { name: /reader preview|preview/i }).first();
     await previewBtn.click();
     const envelopeModal = page.locator('.envelope-modal-backdrop');
     await expect(envelopeModal).toBeVisible();

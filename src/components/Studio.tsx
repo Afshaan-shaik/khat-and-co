@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
-import { LetterData, PaperTemplate, FontOption } from '../types/letter';
+import React, { useRef, useState } from 'react';
+import { LetterData, PaperTemplate, FontOption, WaxSealData } from '../types/letter';
 import { LetterEditor } from './LetterEditor';
 import { TemplatePicker } from './TemplatePicker';
 import { FontPicker } from './FontPicker';
 import { StickerDrawer } from './StickerDrawer';
-import { WaxSealPicker, WaxSealData } from './WaxSealPicker';
+import { WaxSealPicker, WaxSealSVG } from './WaxSealPicker';
+import { resolveWaxSeal } from '../constants/waxSeal';
 import { VoiceWizard } from './VoiceWizard';
 import { InspireMe } from './InspireMe';
 import { PAPER_TEMPLATES } from '../constants/templates';
@@ -20,7 +21,7 @@ interface StudioProps {
   onSelectInk: (inkHex: string) => void;
   onToggleRuledLines: () => void;
   onAddSticker: (def: StickerDefinition) => void;
-  sealData: WaxSealData;
+  sealData?: WaxSealData;
   onChangeSeal: (seal: WaxSealData) => void;
   onPreviewEnvelope: () => void;
   onShareLink: () => void;
@@ -45,13 +46,21 @@ export const Studio: React.FC<StudioProps> = ({
   onSavePicture,
   isExporting = false,
 }) => {
+  const [previewMode, setPreviewMode] = useState<'paper' | 'envelope'>('paper');
   const letterSheetRef = useRef<HTMLDivElement>(null);
   const currentTemplate = PAPER_TEMPLATES.find(t => t.id === letter.templateId) || PAPER_TEMPLATES[0];
+
+  const currentSeal = resolveWaxSeal(letter.waxSeal || sealData);
 
   const handleUsePrompt = (prompt: string) => {
     const current = letter.body;
     const addition = current.trim() ? `\n\n${prompt}` : prompt;
     onChangeLetter({ body: current + addition });
+  };
+
+  const handleSealChange = (newSeal: WaxSealData) => {
+    onChangeSeal(newSeal);
+    onChangeLetter({ waxSeal: newSeal });
   };
 
   if (!isOpen) return null;
@@ -166,7 +175,14 @@ export const Studio: React.FC<StudioProps> = ({
           </details>
 
           {/* Wax Seal */}
-          <details className="studio-accordion">
+          <details
+            className="studio-accordion"
+            onToggle={(e) => {
+              if ((e.currentTarget as HTMLDetailsElement).open) {
+                setPreviewMode('envelope');
+              }
+            }}
+          >
             <summary className="studio-accordion-summary">
               <span className="studio-acc-label">Wax Seal</span>
               <svg className="studio-acc-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -174,7 +190,7 @@ export const Studio: React.FC<StudioProps> = ({
               </svg>
             </summary>
             <div className="studio-accordion-body">
-              <WaxSealPicker sealData={sealData} onChangeSeal={onChangeSeal} />
+              <WaxSealPicker sealData={currentSeal} onChangeSeal={handleSealChange} />
             </div>
           </details>
 
@@ -229,17 +245,154 @@ export const Studio: React.FC<StudioProps> = ({
 
         {/* ── RIGHT: Live preview panel (desktop only) ── */}
         <aside className="studio-right-panel d-none d-xl-flex" aria-label="Live letter preview">
-          <div className="studio-preview-label">
-            <span>Preview</span>
+          <div className="studio-preview-header-row d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+            <div className="studio-preview-label m-0 p-0 border-0">
+              <span>Preview</span>
+            </div>
+            <div className="studio-preview-toggle-btns" role="tablist" aria-label="Preview view">
+              <button
+                type="button"
+                className={`studio-preview-tab-btn ${previewMode === 'paper' ? 'active' : ''}`}
+                onClick={() => setPreviewMode('paper')}
+                title="Preview letter sheet"
+                role="tab"
+                aria-selected={previewMode === 'paper'}
+              >
+                Paper
+              </button>
+              <button
+                type="button"
+                className={`studio-preview-tab-btn ${previewMode === 'envelope' ? 'active' : ''}`}
+                onClick={() => setPreviewMode('envelope')}
+                title="Preview sealed envelope"
+                role="tab"
+                aria-selected={previewMode === 'envelope'}
+              >
+                Envelope
+              </button>
+            </div>
           </div>
-          <div className="studio-preview-inner">
-            <LetterEditor
-              letter={letter}
-              onChangeLetter={() => {}}
-              letterSheetRef={{ current: null } as React.RefObject<HTMLDivElement>}
-              readOnly={true}
-            />
-          </div>
+
+          {previewMode === 'paper' ? (
+            <div className="studio-preview-inner">
+              <LetterEditor
+                letter={letter}
+                onChangeLetter={() => {}}
+                letterSheetRef={{ current: null } as React.RefObject<HTMLDivElement>}
+                readOnly={true}
+              />
+            </div>
+          ) : (
+            <div className="studio-preview-envelope-wrap" data-testid="studio-envelope-preview" style={{ padding: '8px 0' }}>
+              <div
+                className="envelope-card env-envelope"
+                style={{
+                  maxWidth: '100%',
+                  width: '100%',
+                  minHeight: '270px',
+                  boxShadow: '0 12px 36px rgba(0,0,0,0.3)',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                {/* Airmail dashed frame */}
+                <div className="envelope-airmail-frame" />
+
+                {/* Postal Stamp & Postmark */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '14px',
+                    right: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <div style={{ width: '40px', height: '40px', opacity: 0.85 }}>
+                    <svg viewBox="0 0 84 84" width="100%" height="100%" fill="none">
+                      <circle cx="42" cy="42" r="38" stroke="#1F2340" strokeWidth="2" opacity="0.85" />
+                      <circle cx="42" cy="42" r="32" stroke="#1F2340" strokeWidth="1.2" strokeDasharray="4 2" />
+                      <text x="42" y="24" textAnchor="middle" fill="#1F2340" fontSize="7" fontFamily="'Instrument Sans', sans-serif" fontWeight="700">
+                        AIR MAIL
+                      </text>
+                      <text x="42" y="46" textAnchor="middle" fill="#B4455A" fontSize="8" fontFamily="'Instrument Sans', sans-serif" fontWeight="700">
+                        SPECIAL
+                      </text>
+                    </svg>
+                  </div>
+                  <div style={{ width: '36px', height: '44px', boxShadow: '0 2px 6px rgba(0,0,0,0.15)' }}>
+                    <svg viewBox="0 0 64 76" width="100%" height="100%" fill="none">
+                      <rect x="2" y="2" width="60" height="72" rx="2" fill="#F6EFE3" stroke="#3E5C8A" strokeWidth="2" strokeDasharray="3 3" />
+                      <rect x="6" y="6" width="52" height="64" fill="#EAF0F8" stroke="#3E5C8A" strokeWidth="1.5" />
+                      <path d="M22 36 C24 30 30 26 38 28 C42 29 46 27 48 24 C46 30 43 33 40 34 C44 38 41 44 34 44 C28 44 24 40 22 36 Z" fill="#FFFFFF" stroke="#3E5C8A" strokeWidth="1.5" />
+                      <text x="32" y="58" textAnchor="middle" fill="#3E5C8A" fontSize="7" fontFamily="'Instrument Sans', sans-serif" fontWeight="700">
+                        KHATH &amp; CO
+                      </text>
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Handwritten Addressed Text */}
+                <div
+                  className="text-start"
+                  style={{
+                    position: 'absolute',
+                    bottom: '16px',
+                    left: '18px',
+                    zIndex: 20,
+                    fontFamily: "'Kalam', 'Caveat', cursive",
+                    color: '#1F2340',
+                    maxWidth: '55%',
+                    pointerEvents: 'none'
+                  }}
+                >
+                  <div className="small text-muted font-sans text-uppercase fw-bold" style={{ fontSize: '10px', letterSpacing: '1px', opacity: 0.75, marginBottom: '2px' }}>
+                    TO:
+                  </div>
+                  <div className="fw-bold lh-1 mb-1" style={{ fontSize: '18px', color: '#1F2340', wordBreak: 'break-word' }}>
+                    {letter.recipient || 'For You'}
+                  </div>
+                  <div className="text-muted font-sans" style={{ fontSize: '11px' }}>
+                    From: <span className="font-kalam fw-bold" style={{ color: '#B4455A', fontSize: '13px' }}>{letter.sender || 'Me'}</span>
+                  </div>
+                </div>
+
+                {/* Envelope Flap */}
+                <div className="envelope-flap" style={{ height: '54%' }}>
+                  <svg viewBox="0 0 520 180" width="100%" height="100%" preserveAspectRatio="none">
+                    <polygon points="0,0 520,0 260,180" fill="#E7DCBE" stroke="#1F2340" strokeWidth="2.5" />
+                    <line x1="20" y1="12" x2="250" y2="170" stroke="#B4455A" strokeWidth="2.5" strokeDasharray="7 5" />
+                    <line x1="500" y1="12" x2="270" y2="170" stroke="#3E5C8A" strokeWidth="2.5" strokeDasharray="7 5" />
+                  </svg>
+                </div>
+
+                {/* Wax Seal on Preview Envelope */}
+                <div
+                  className="pulsing-wax-seal"
+                  style={{
+                    cursor: 'default',
+                    animation: 'none',
+                    transform: 'translate(-50%, -50%) scale(0.92)'
+                  }}
+                  data-testid="studio-preview-wax-seal"
+                >
+                  <WaxSealSVG
+                    seal={currentSeal}
+                    size={72}
+                    color="#B4455A"
+                    strokeColor="#1F2340"
+                    strokeWidth={2.6}
+                  />
+                </div>
+              </div>
+              <div className="text-center mt-2">
+                <span className="small text-muted font-sans" style={{ fontSize: '11px', opacity: 0.85 }}>
+                  Live envelope preview with {currentSeal.symbol} wax seal
+                </span>
+              </div>
+            </div>
+          )}
         </aside>
       </div>
     </div>

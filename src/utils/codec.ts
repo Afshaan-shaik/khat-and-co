@@ -1,8 +1,9 @@
 import LZString from 'lz-string';
-import { LetterData, PlacedSticker } from '../types/letter';
+import { LetterData, PlacedSticker, WaxSealData } from '../types/letter';
 import { PAPER_TEMPLATES } from '../constants/templates';
 import { HANDWRITING_FONTS } from '../constants/fonts';
 import { STICKER_REGISTRY } from '../constants/stickers';
+import { DEFAULT_WAX_SEAL } from '../constants/waxSeal';
 
 const HEX_COLOR_REGEX = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
 
@@ -19,6 +20,12 @@ export function encodeLetterToHash(letter: LetterData): string {
       f: letter.fontId,
       i: letter.inkColor,
       rl: letter.ruledLines ? 1 : 0,
+      ws: letter.waxSeal ? {
+        id: letter.waxSeal.id,
+        s: letter.waxSeal.symbol,
+        c: letter.waxSeal.isCustom ? 1 : 0,
+        t: letter.waxSeal.customText || ''
+      } : undefined,
       st: (letter.stickers || []).slice(0, 40).map((stk) => ({
         id: stk.id,
         sId: stk.stickerId,
@@ -103,6 +110,16 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
       });
     }
 
+    const rawWs = raw.ws || raw.waxSeal;
+    const waxSeal: WaxSealData = (rawWs && typeof rawWs === 'object')
+      ? {
+          id: String(rawWs.id || (rawWs.s === '♡' ? 'heart' : 'custom')),
+          symbol: String(rawWs.s || rawWs.symbol || '♡'),
+          isCustom: rawWs.c !== undefined ? Boolean(rawWs.c) : Boolean(rawWs.isCustom),
+          customText: String(rawWs.t || rawWs.customText || 'A').slice(0, 2)
+        }
+      : { ...DEFAULT_WAX_SEAL };
+
     const letter: LetterData = {
       recipient: String(raw.r ?? raw.recipient ?? '').slice(0, 120),
       date: String(raw.d ?? raw.date ?? '').slice(0, 80),
@@ -114,7 +131,8 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
       fontId,
       inkColor,
       stickers: sanitizedStickers,
-      ruledLines: raw.rl !== undefined ? Boolean(raw.rl) : (raw.ruledLines !== undefined ? Boolean(raw.ruledLines) : true)
+      ruledLines: raw.rl !== undefined ? Boolean(raw.rl) : (raw.ruledLines !== undefined ? Boolean(raw.ruledLines) : true),
+      waxSeal
     };
 
     return letter;

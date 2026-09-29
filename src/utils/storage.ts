@@ -1,5 +1,6 @@
 import { LetterData } from '../types/letter';
 import { PAPER_TEMPLATES } from '../constants/templates';
+import { DEFAULT_WAX_SEAL } from '../constants/waxSeal';
 
 export const DRAFT_STORAGE_KEY = 'khat-and-co:draft';
 export const THEME_STORAGE_KEY = 'khat-and-co:theme';
@@ -30,6 +31,7 @@ export function createDefaultLetter(): LetterData {
     fontId: 'caveat',
     inkColor: PAPER_TEMPLATES[0].defaultInk,
     ruledLines: true,
+    waxSeal: { ...DEFAULT_WAX_SEAL },
     stickers: [
       {
         id: 'init_stamp',
@@ -64,9 +66,27 @@ export function createDefaultLetter(): LetterData {
 
 export function sanitizeLoadedLetter(raw: any): LetterData {
   if (!raw || typeof raw !== 'object') return createDefaultLetter();
+  const defaultLetter = createDefaultLetter();
+
+  let waxSeal = defaultLetter.waxSeal;
+  const rawWs = raw.waxSeal || raw.ws;
+  if (rawWs && typeof rawWs === 'object') {
+    const symbol = String(rawWs.symbol || rawWs.s || '').trim();
+    const id = String(rawWs.id || '').trim();
+    if (symbol || id) {
+      waxSeal = {
+        id: id || (symbol === '♡' ? 'heart' : 'custom'),
+        symbol: symbol || (id === 'heart' ? '♡' : 'A'),
+        isCustom: rawWs.isCustom !== undefined ? Boolean(rawWs.isCustom) : Boolean(rawWs.c),
+        customText: rawWs.customText ? String(rawWs.customText).slice(0, 2) : (rawWs.t ? String(rawWs.t).slice(0, 2) : 'A')
+      };
+    }
+  }
+
   return {
-    ...createDefaultLetter(),
+    ...defaultLetter,
     ...raw,
+    waxSeal,
     stickers: Array.isArray(raw.stickers) ? raw.stickers : []
   };
 }

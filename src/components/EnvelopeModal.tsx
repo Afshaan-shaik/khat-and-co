@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LetterData } from '../types/letter';
+import { resolveWaxSeal } from '../constants/waxSeal';
 import { LetterEditor } from './LetterEditor';
 import { exportLetterAsPicture } from '../utils/export';
 
@@ -340,31 +341,53 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
             )}
 
             {/* Center Pulsing Wax Seal Button */}
-            {!isOpening && !loadError && (
-              <button
-                type="button"
-                className="pulsing-wax-seal"
-                onClick={handleOpenEnvelope}
-                title="Tap to break the seal and open the letter"
-                aria-label="Tap to open letter"
-              >
-                <svg viewBox="0 0 68 68" width="80" height="80" fill="none">
-                  {/* Organic wax seal */}
-                  <path
-                    d="M34 6 C42 5 46 9 53 13 C59 18 62 23 62 31 C63 39 59 46 54 52 C48 58 41 62 33 62 C25 61 19 59 13 53 C8 47 6 41 6 33 C6 25 10 18 16 13 C22 8 26 6 34 6 Z"
-                    fill="#B4455A"
-                    stroke="#1F2340"
-                    strokeWidth="2.8"
-                  />
-                  <circle cx="34" cy="34" r="20" stroke="rgba(246, 239, 227, 0.45)" strokeWidth="1.5" strokeDasharray="3 2" />
-                  {/* Cream Heart inside seal */}
-                  <path
-                    d="M34 43 L32.5 41.6 C27.5 37 24 33.8 24 29.8 C24 26.5 26.5 24 29.8 24 C31.6 24 33.3 24.8 34 26.1 C34.7 24.8 36.4 24 38.2 24 C41.5 24 44 26.5 44 29.8 C44 33.8 40.5 37 35.5 41.6 L34 43 Z"
-                    fill="#F6EFE3"
-                  />
-                </svg>
-              </button>
-            )}
+            {!isOpening && !loadError && (() => {
+              const seal = resolveWaxSeal(letter);
+              const isHeart = seal.id === 'heart' || seal.symbol === '♡';
+              const displaySymbol = seal.symbol || (isHeart ? '♡' : 'A');
+
+              return (
+                <button
+                  type="button"
+                  className="pulsing-wax-seal"
+                  onClick={handleOpenEnvelope}
+                  title={`Tap to break the ${displaySymbol} wax seal and open the letter`}
+                  aria-label={`Tap to open letter with ${displaySymbol} wax seal`}
+                  data-testid="envelope-wax-seal"
+                  data-seal-id={seal.id}
+                  data-seal-symbol={displaySymbol}
+                >
+                  <svg viewBox="0 0 68 68" width="80" height="80" fill="none">
+                    {/* Organic wax seal */}
+                    <path
+                      d="M34 6 C42 5 46 9 53 13 C59 18 62 23 62 31 C63 39 59 46 54 52 C48 58 41 62 33 62 C25 61 19 59 13 53 C8 47 6 41 6 33 C6 25 10 18 16 13 C22 8 26 6 34 6 Z"
+                      fill="#B4455A"
+                      stroke="#1F2340"
+                      strokeWidth="2.8"
+                    />
+                    <circle cx="34" cy="34" r="20" stroke="rgba(246, 239, 227, 0.45)" strokeWidth="1.5" strokeDasharray="3 2" />
+                    {isHeart ? (
+                      <path
+                        d="M34 43 L32.5 41.6 C27.5 37 24 33.8 24 29.8 C24 26.5 26.5 24 29.8 24 C31.6 24 33.3 24.8 34 26.1 C34.7 24.8 36.4 24 38.2 24 C41.5 24 44 26.5 44 29.8 C44 33.8 40.5 37 35.5 41.6 L34 43 Z"
+                        fill="#F6EFE3"
+                      />
+                    ) : (
+                      <text
+                        x="34"
+                        y="42"
+                        textAnchor="middle"
+                        fill="#F6EFE3"
+                        fontSize={displaySymbol.length > 1 ? '18' : '26'}
+                        fontFamily="'Instrument Serif', serif"
+                        fontWeight="400"
+                      >
+                        {displaySymbol}
+                      </text>
+                    )}
+                  </svg>
+                </button>
+              );
+            })()}
           </div>
 
           {/* Help hint */}
@@ -373,11 +396,17 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
               <span className="small text-danger opacity-90 font-sans">
                 This letter link might be invalid or expired.
               </span>
-            ) : (
-              <span className="small text-light opacity-75 font-sans">
-                Tap the rose wax seal to unseal · मोहर पर टैप करें
-              </span>
-            )}
+            ) : (() => {
+              const seal = resolveWaxSeal(letter);
+              const isHeart = seal.id === 'heart' || seal.symbol === '♡';
+              return (
+                <span className="small text-light opacity-75 font-sans">
+                  {isHeart
+                    ? 'Tap the rose wax seal to unseal · मोहर पर टैप करें'
+                    : `Tap the ${seal.symbol} wax seal to unseal · मोहर पर टैप करें`}
+                </span>
+              );
+            })()}
           </div>
 
           {/* Close / Return button */}

@@ -8,6 +8,13 @@ export interface PlacedSticker {
   zIndex: number;
 }
 
+export interface WaxSealData {
+  id: string; // 'heart' | 'star' | 'infinity' | 'fleur' | 'moon' | 'crown' | 'custom'
+  symbol: string; // '♡' | '✦' | '∞' | '✿' | '☽' | '♔' | custom text
+  isCustom?: boolean;
+  customText?: string;
+}
+
 export interface LetterData {
   recipient: string; // "For Dearest Anaya"
   date: string; // "September 28, 2026"
@@ -20,6 +27,7 @@ export interface LetterData {
   inkColor: string; // "#1F2340", etc.
   stickers: PlacedSticker[];
   ruledLines: boolean; // toggle ruled lines on or off
+  waxSeal?: WaxSealData;
 }
 
 export interface PaperTemplate {
