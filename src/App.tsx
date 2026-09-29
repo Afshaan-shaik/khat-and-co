@@ -461,7 +461,7 @@ export const App: React.FC = () => {
           </button>
         </div>
 
-        <main id="top">
+        <main id="top" data-testid="stage">
           {/* Hero Section with interactive 3D Hero Envelope */}
           <HeroSection />
 
@@ -484,19 +484,20 @@ export const App: React.FC = () => {
           <NudgeSection />
         </main>
 
-        {/* Footer */}
-        <footer>
-          <div className="container">
-            <span>Khath &amp; Co. Made for slow mail.</span>
-            <span>
-              Letters live inside their links. ·{' '}
+        {/* Footer with credit lockup */}
+        <footer className="app-footer">
+          <div className="container d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <span className="app-footer-name">Khath &amp; Co. Made for slow mail.</span>
+            <span className="app-footer-credit">
+              Letters live inside their links. · crafted by -{' '}
               <a
                 href="https://github.com/Afshaan-shaik"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="app-footer-author"
                 style={{ textDecoration: 'underline' }}
               >
-                Crafted by Afshaan Shaik
+                Afshaan Shaik
               </a>
             </span>
           </div>
