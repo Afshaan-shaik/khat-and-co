@@ -10,7 +10,7 @@ import { WEEKLY_PROMPTS } from '../constants/prompts';
 import { createShortShareUrl } from '../utils/shortLink';
 import { encodeLetterToHash } from '../utils/codec';
 import { copyTextToClipboard } from '../utils/clipboard';
-import { exportLetterAsPicture } from '../utils/export';
+import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
 
 interface StudioSectionProps {
   letter: LetterData;
@@ -43,6 +43,8 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const paperRef = useRef<HTMLDivElement>(null);
+  const exportPaperRef = useRef<HTMLDivElement>(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<number | null>(null);
@@ -253,18 +255,35 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
   };
 
   const handleSavePdf = async () => {
-    if (paperRef.current) {
+    const targetElement = exportPaperRef.current || paperRef.current;
+    if (!targetElement) {
+      window.print();
+      return;
+    }
+    setIsExportingPdf(true);
+    try {
+      const recipientName = (letter.recipient || 'dear')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      await exportLetterAsPdf(targetElement, {
+        fileName: `khat-letter-${recipientName}.pdf`,
+        letter,
+        pixelRatio: 2
+      });
+      setIsExportingPdf(false);
+      showToast('✉️ Letter saved as PDF!');
+    } catch (err) {
+      setIsExportingPdf(false);
+      console.warn('PDF export failed, falling back to picture:', err);
       try {
-        await exportLetterAsPicture(paperRef.current, {
+        await exportLetterAsPicture(targetElement, {
           fileName: `khat-letter-${letter.recipient || 'dear'}.png`,
-          pixelRatio: 3
+          pixelRatio: 2
         });
         showToast('Letter downloaded as picture!');
       } catch {
         window.print();
       }
-    } else {
-      window.print();
     }
   };
 
@@ -1122,8 +1141,9 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                       id="pdfBtn"
                       type="button"
                       onClick={handleSavePdf}
+                      disabled={isExportingPdf}
                     >
-                      Save as PDF
+                      {isExportingPdf ? 'Generating PDF...' : 'Save as PDF'}
                     </button>
                     <button
                       className="btn ghost sm"
@@ -1154,6 +1174,68 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
             </div>
           </div>
         )}
+      </div>
+
+      {/* Offscreen high-fidelity letter paper for PDF export */}
+      <div
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: 0,
+          width: '560px',
+          pointerEvents: 'none',
+          zIndex: -100
+        }}
+        aria-hidden="true"
+      >
+        <div
+          ref={exportPaperRef}
+          className={`paper p-${letter.templateId} f-${letter.fontId} sz-${letter.fontSize || 'm'} ${letter.ruledLines ? 'p-lined' : ''}`}
+        >
+          <div className="paper-in">
+            <div className="salute letter-to-label">
+              <span>{letter.language === 'hi' || /[\u0900-\u097F]/.test(letter.body) ? 'प्रिय' : 'Dear'}</span>
+              <span className="nm">{letter.recipient || 'friend'},</span>
+            </div>
+
+            <div className="body" style={{ color: letter.inkColor, whiteSpace: 'pre-wrap' }}>
+              {letter.body}
+            </div>
+
+            <div className="closing" data-testid="letter-footer">
+              <div>{letter.signoff || 'With love,'}</div>
+              <div>{letter.sender || ''}</div>
+            </div>
+
+            {letter.ps && (
+              <div className="ps torn">
+                <div className="ps-note">P.S. {letter.ps}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Placed Stickers Layer */}
+          <div className="stk-layer">
+            {(letter.stickers || []).map((st) => {
+              const def = STICKER_REGISTRY[st.stickerId];
+              if (!def) return null;
+              return (
+                <div
+                  key={st.id}
+                  className="stk"
+                  style={{
+                    left: `${st.x}%`,
+                    top: `${st.y}%`,
+                    width: `${st.scale ? st.scale * 20 : 20}%`,
+                    transform: `translate(-50%, -50%) rotate(${st.rotation}deg)`
+                  }}
+                >
+                  {def.render(letter.date)}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </section>
   );

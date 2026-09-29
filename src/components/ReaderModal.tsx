@@ -4,7 +4,7 @@ import { sfx } from '../utils/sound';
 import { renderWaxSealSvg, resolveWaxSeal } from '../constants/waxSeal';
 import { renderPostageStampSvg, renderPostmarkSvg } from '../utils/stamps';
 import { STICKER_REGISTRY } from '../constants/stickers';
-import { exportLetterAsPicture } from '../utils/export';
+import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
 
 interface ReaderModalProps {
   isOpen: boolean;
@@ -138,18 +138,40 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
     }
   };
 
-  const handlePrint = async () => {
-    if (paperRef.current) {
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
+
+  const handleSavePdf = async () => {
+    if (!paperRef.current) {
+      window.print();
+      return;
+    }
+
+    setIsDownloadingPdf(true);
+    try {
+      const recipientName = (letter?.recipient || 'letter')
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      await exportLetterAsPdf(paperRef.current, {
+        fileName: `khat-letter-${recipientName}.pdf`,
+        letter: letter || undefined,
+        pixelRatio: 2
+      });
+      setIsDownloadingPdf(false);
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 3000);
+    } catch (err) {
+      setIsDownloadingPdf(false);
+      console.warn('PDF export failed, falling back to picture download:', err);
+      // Secondary fallback: Picture download
       try {
         await exportLetterAsPicture(paperRef.current, {
-          fileName: `khat-letter-${letter?.recipient || 'dear'}.png`,
-          pixelRatio: 3
+          fileName: `khat-letter-${letter?.recipient || 'letter'}.png`,
+          pixelRatio: 2
         });
       } catch {
         window.print();
       }
-    } else {
-      window.print();
     }
   };
 
@@ -391,8 +413,16 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
             </div>
 
             <div className="reader-actions" id="readerActions">
-              <button className="btn ghost" id="rPdf" type="button" onClick={handlePrint}>
-                Save as PDF
+              <button
+                className="btn ghost"
+                id="rPdf"
+                type="button"
+                onClick={handleSavePdf}
+                disabled={isDownloadingPdf}
+                aria-label="Save letter as PDF"
+                data-testid="save-pdf-btn"
+              >
+                {isDownloadingPdf ? 'Generating PDF...' : downloadSuccess ? '✓ PDF Saved' : 'Save as PDF'}
               </button>
               <button
                 className="btn cta"
