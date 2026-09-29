@@ -1123,7 +1123,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                       type="button"
                       onClick={handleSavePdf}
                     >
-                      Save as Picture
+                      Save as PDF
                     </button>
                     <button
                       className="btn ghost sm"

@@ -27,7 +27,6 @@ import { ReaderModal } from './components/ReaderModal';
 
 // Modal Overlays & Existing Feature Modules
 import { Studio } from './components/Studio';
-import { EnvelopeModal } from './components/EnvelopeModal';
 import { YourDesk } from './components/YourDesk';
 import { PromptModal } from './components/PromptModal';
 import { TimeCapsuleManager } from './components/TimeCapsuleManager';
@@ -81,7 +80,6 @@ export const App: React.FC = () => {
 
   // Recipient Flow state
   const [isRecipientFlow, setIsRecipientFlow] = useState<boolean>(hasIncomingShare);
-  const [isEnvelopeOpen, setIsEnvelopeOpen] = useState<boolean>(hasIncomingShare);
   const [isLoadingSharedLetter, setIsLoadingSharedLetter] = useState<boolean>(() => {
     return hasIncomingShare() && !getInitialRecipientLetter();
   });
@@ -151,7 +149,6 @@ export const App: React.FC = () => {
         if (decoded) {
           setRecipientLetter(decoded);
           setIsRecipientFlow(true);
-          setIsEnvelopeOpen(true);
           setIsLoadingSharedLetter(false);
         } else {
           setIsLoadingSharedLetter(false);
@@ -293,9 +290,7 @@ export const App: React.FC = () => {
 
   // Preview envelope as recipient
   const handlePreviewEnvelope = () => {
-    setRecipientLetter(letter);
-    setIsRecipientFlow(false);
-    setIsEnvelopeOpen(true);
+    handleOpenReader(letter, { peek: true });
   };
 
   // Write Back action from recipient view
@@ -329,7 +324,6 @@ export const App: React.FC = () => {
     saveDraft(replyLetter);
 
     window.history.replaceState(null, '', window.location.pathname);
-    setIsEnvelopeOpen(false);
     setIsRecipientFlow(false);
     setRecipientLetter(null);
     setIsReaderOpen(false);
@@ -343,12 +337,13 @@ export const App: React.FC = () => {
   };
 
   const handleCloseEnvelope = () => {
-    setIsEnvelopeOpen(false);
     if (isRecipientFlow) {
       setIsRecipientFlow(false);
       setRecipientLetter(null);
       window.history.replaceState(null, '', window.location.pathname);
     }
+    setIsReaderOpen(false);
+    setReaderLetter(null);
   };
 
   // Reader Modal handlers
@@ -361,24 +356,29 @@ export const App: React.FC = () => {
   const handleCloseReader = () => {
     setIsReaderOpen(false);
     setReaderLetter(null);
+    if (isRecipientFlow) {
+      setIsRecipientFlow(false);
+      setRecipientLetter(null);
+      window.history.replaceState(null, '', window.location.pathname);
+    }
   };
 
   // ══════════════════════════════════════════════════════════════════════
   // CRITICAL RECIPIENT FLOW GUARANTEE:
   // When a recipient opens a shared letter link (?id=... or #l=...),
   // the author desk (.workspace-layout) is NEVER rendered.
-  // The recipient sees strictly the sealed EnvelopeModal concealing the letter!
+  // The recipient sees strictly the sealed ReaderModal concealing the letter!
   // ══════════════════════════════════════════════════════════════════════
   if (isRecipientFlow) {
     return (
       <div className="app-shell recipient-mode">
-        <EnvelopeModal
-          isOpen={isEnvelopeOpen}
+        <ReaderModal
+          isOpen={true}
           letter={recipientLetter}
           onClose={handleCloseEnvelope}
           onWriteBack={handleWriteBack}
-          isRecipientFlow={true}
-          isLoadingLetter={isLoadingSharedLetter}
+          isPeek={false}
+          isLoading={isLoadingSharedLetter}
           loadError={sharedLetterError}
         />
         {toastMessage && (
@@ -538,16 +538,7 @@ export const App: React.FC = () => {
         isExporting={isExporting}
       />
 
-      {/* Animated Envelope Reading Modal for Preview */}
-      <EnvelopeModal
-        isOpen={isEnvelopeOpen}
-        letter={recipientLetter || letter}
-        onClose={handleCloseEnvelope}
-        onWriteBack={handleWriteBack}
-        isRecipientFlow={false}
-        isLoadingLetter={false}
-        loadError={false}
-      />
+
 
       {/* Your Desk Modal */}
       <YourDesk
