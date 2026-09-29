@@ -8,14 +8,21 @@ interface ExportPdfOptions {
 }
 
 /**
- * Robustly captures an HTML element as high-resolution PNG data URL.
- * Automatically handles cross-origin font errors and style parsing gracefully.
+ * Captures an HTML element as an exact, high-fidelity image data URL.
+ * Preserves the exact background color, text color, borders, gradients,
+ * stickers, handwriting fonts, and spacing.
+ *
+ * Crucially:
+ * 1. Resolves the element's computed background color to prevent transparent canvas rendering.
+ * 2. Renders via html-to-image with solid background, eliminating alpha-channel Soft Masks (/SMask)
+ *    which cause PDF viewers and printers to darken, fade, or wash out colors.
+ * 3. Exports crisp 24-bit direct color DeviceRGB image to jsPDF.
  */
-async function captureElementToPng(
+async function captureElementToOpaqueImage(
   element: HTMLElement,
   pixelRatio: number = 2
-): Promise<string> {
-  const { toPng } = await import('html-to-image');
+): Promise<{ dataUrl: string; format: 'JPEG' | 'PNG' }> {
+  const { toCanvas } = await import('html-to-image');
 
   try {
     if (document.fonts) {
@@ -39,24 +46,55 @@ async function captureElementToPng(
     return true;
   };
 
+  // Determine computed background color of paper to avoid transparent alpha blending
+  const computedStyle = window.getComputedStyle(element);
+  const rawBg = computedStyle.backgroundColor;
+  const bgColor =
+    rawBg && rawBg !== 'rgba(0, 0, 0, 0)' && rawBg !== 'transparent'
+      ? rawBg
+      : '#F8F3EA';
+
+  const renderOptions = {
+    pixelRatio: Math.max(pixelRatio, 2),
+    cacheBust: false,
+    backgroundColor: bgColor,
+    filter,
+    style: {
+      boxShadow: 'none' // Prevent clipped outer box shadow from creating dark bars on PDF page edges
+    }
+  };
+
+  let canvas: HTMLCanvasElement;
   try {
-    // Primary attempt: high fidelity with font parsing using cached fonts
-    return await toPng(element, {
-      pixelRatio,
-      cacheBust: false,
-      filter,
-      backgroundColor: undefined
-    });
+    canvas = await toCanvas(element, renderOptions);
   } catch (err) {
     console.warn('First export pass failed, retrying with skipFonts: true', err);
-    // Secondary attempt: bypass external font fetching to prevent CORS/security block
-    return await toPng(element, {
-      pixelRatio: Math.min(pixelRatio, 2),
-      skipFonts: true,
-      cacheBust: false,
-      filter
+    canvas = await toCanvas(element, {
+      ...renderOptions,
+      skipFonts: true
     });
   }
+
+  // Draw onto a 100% opaque destination canvas to guarantee zero alpha transparency.
+  // This completely prevents jsPDF from creating an /SMask, ensuring 100% color accuracy in all PDF readers and printers.
+  const destCanvas = document.createElement('canvas');
+  destCanvas.width = canvas.width;
+  destCanvas.height = canvas.height;
+  const destCtx = destCanvas.getContext('2d', { alpha: false });
+  if (destCtx) {
+    destCtx.fillStyle = bgColor;
+    destCtx.fillRect(0, 0, destCanvas.width, destCanvas.height);
+    destCtx.drawImage(canvas, 0, 0);
+    return {
+      dataUrl: destCanvas.toDataURL('image/jpeg', 0.98),
+      format: 'JPEG'
+    };
+  }
+
+  return {
+    dataUrl: canvas.toDataURL('image/jpeg', 0.98),
+    format: 'JPEG'
+  };
 }
 
 /**
@@ -93,8 +131,8 @@ export async function exportLetterAsPdf(
   const pixelRatio = options?.pixelRatio || 2; // 2x gives optimal balance of razor sharpness and mobile memory safety
 
   try {
-    // 1. Capture exact rendered letter element
-    const dataUrl = await captureElementToPng(element, pixelRatio);
+    // 1. Capture exact rendered letter element with solid background
+    const { dataUrl, format } = await captureElementToOpaqueImage(element, pixelRatio);
 
     // 2. Measure aspect ratio of element
     const rect = element.getBoundingClientRect();
@@ -115,7 +153,7 @@ export async function exportLetterAsPdf(
     });
 
     // 4. Paint the high-res letter image edge-to-edge
-    pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    pdf.addImage(dataUrl, format, 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
 
     // 5. Trigger download as PDF blob
     const pdfBlob = pdf.output('blob');
@@ -129,22 +167,22 @@ export async function exportLetterAsPdf(
 }
 
 /**
- * Exports the letter as high-resolution PNG picture.
+ * Exports the letter as high-resolution picture.
  */
 export async function exportLetterAsPicture(
   element: HTMLElement,
   options?: { pixelRatio?: number; fileName?: string }
 ): Promise<void> {
   const pixelRatio = options?.pixelRatio || 2;
-  const fileName = options?.fileName || 'khat-and-co-letter.png';
+  const fileName = options?.fileName || 'khat-and-co-letter.jpg';
 
   try {
-    const dataUrl = await captureElementToPng(element, pixelRatio);
+    const { dataUrl } = await captureElementToOpaqueImage(element, pixelRatio);
 
     // Convert data URL to Blob for reliable mobile download
     const res = await fetch(dataUrl);
     const blob = await res.blob();
-    triggerDownloadBlob(blob, fileName.endsWith('.png') ? fileName : `${fileName}.png`);
+    triggerDownloadBlob(blob, fileName.endsWith('.png') || fileName.endsWith('.jpg') ? fileName : `${fileName}.jpg`);
   } catch (err) {
     console.error('Failed to export letter as picture', err);
     throw err;

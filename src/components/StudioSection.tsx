@@ -11,6 +11,7 @@ import { createShortShareUrl } from '../utils/shortLink';
 import { encodeLetterToHash } from '../utils/codec';
 import { copyTextToClipboard } from '../utils/clipboard';
 import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
+import { hasAudioAttachment } from './ReaderModal';
 
 interface StudioSectionProps {
   letter: LetterData;
@@ -1206,6 +1207,15 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
               <div>{letter.signoff || 'With love,'}</div>
               <div>{letter.sender || ''}</div>
             </div>
+
+            {hasAudioAttachment(letter.voiceNoteUrl) && (
+              <div className="cassette" data-testid="letter-voice-note">
+                <div className="cassette-label">
+                  <span>🎙️ Voice note</span>
+                </div>
+                <audio controls src={letter.voiceNoteUrl!} />
+              </div>
+            )}
 
             {letter.ps && (
               <div className="ps torn">

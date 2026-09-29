@@ -16,6 +16,19 @@ interface ReaderModalProps {
   loadError?: boolean;
 }
 
+/**
+ * Helper to determine if a letter has a valid, non-empty audio attachment.
+ * Prevents rendering empty audio controls, broken players, or placeholders when no audio is attached.
+ */
+export function hasAudioAttachment(voiceNoteUrl?: string | null): boolean {
+  if (!voiceNoteUrl) return false;
+  if (typeof voiceNoteUrl !== 'string') return false;
+  const trimmed = voiceNoteUrl.trim();
+  if (trimmed.length === 0) return false;
+  if (trimmed === 'null' || trimmed === 'undefined' || trimmed === 'false') return false;
+  return true;
+}
+
 export const ReaderModal: React.FC<ReaderModalProps> = ({
   isOpen,
   letter,
@@ -365,10 +378,12 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
                     <div>{letter?.sender || ''}</div>
                   </div>
 
-                  {letter?.voiceNoteUrl && (
-                    <div className="cassette">
-                      <span>Voice note</span>
-                      <audio controls src={letter.voiceNoteUrl} />
+                  {hasAudioAttachment(letter?.voiceNoteUrl) && (
+                    <div className="cassette" data-testid="letter-voice-note">
+                      <div className="cassette-label">
+                        <span>🎙️ Voice note</span>
+                      </div>
+                      <audio controls src={letter!.voiceNoteUrl!} />
                     </div>
                   )}
 

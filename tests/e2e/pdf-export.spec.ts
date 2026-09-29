@@ -89,6 +89,90 @@ test.describe('Letter PDF Export', () => {
     if (filePath) {
       const stats = fs.statSync(filePath);
       expect(stats.size).toBeGreaterThan(10000);
+      const buf = fs.readFileSync(filePath);
+      expect(buf.includes(Buffer.from('/SMask'))).toBe(false);
+    }
+  });
+
+  test('hides audio player and controls when no audio is attached in View Letter and PDF', async ({ page }) => {
+    const testLetter: LetterData = {
+      ...createDefaultLetter(),
+      recipient: 'Pooja',
+      sender: 'Karan',
+      templateId: 'midnight-stars',
+      fontId: 'caveat',
+      ruledLines: false,
+      body: 'Quiet night under the stars. No voice note on this letter.',
+      voiceNoteUrl: null
+    };
+
+    const hash = encodeLetterToHash(testLetter);
+    await page.goto(`http://localhost:4173/#l=${hash}`);
+    await page.evaluate(() => document.fonts.ready);
+
+    const sealBtn = page.getByTestId('envelope-wax-seal');
+    await expect(sealBtn).toBeVisible();
+    await sealBtn.click();
+
+    const paper = page.locator('.reader-letter .paper');
+    await expect(paper).toBeVisible({ timeout: 6000 });
+
+    // Assert NO audio control, no cassette, no placeholder
+    await expect(paper.locator('audio')).toHaveCount(0);
+    await expect(paper.locator('.cassette')).toHaveCount(0);
+    await expect(paper.locator('[data-testid="letter-voice-note"]')).toHaveCount(0);
+
+    // Assert PDF download has zero /SMask
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.locator('#rPdf').click();
+    const download = await downloadPromise;
+    const filePath = await download.path();
+    if (filePath) {
+      const buf = fs.readFileSync(filePath);
+      expect(buf.includes(Buffer.from('/SMask'))).toBe(false);
+    }
+  });
+
+  test('displays audio control normally when audio is attached in View Letter and PDF', async ({ page }) => {
+    const dummyWav = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+    const testLetter: LetterData = {
+      ...createDefaultLetter(),
+      recipient: 'Aarav',
+      sender: 'Rhea',
+      templateId: 'airmail-classic',
+      fontId: 'caveat',
+      ruledLines: true,
+      body: 'I recorded a special voice note for you. Tap play below.',
+      voiceNoteUrl: dummyWav
+    };
+
+    const hash = encodeLetterToHash(testLetter);
+    await page.goto(`http://localhost:4173/#l=${hash}`);
+    await page.evaluate(() => document.fonts.ready);
+
+    const sealBtn = page.getByTestId('envelope-wax-seal');
+    await expect(sealBtn).toBeVisible();
+    await sealBtn.click();
+
+    const paper = page.locator('.reader-letter .paper');
+    await expect(paper).toBeVisible({ timeout: 6000 });
+
+    // Assert audio control and cassette ARE visible and functional
+    await expect(paper.locator('audio')).toBeVisible();
+    await expect(paper.locator('.cassette')).toBeVisible();
+    await expect(paper.locator('[data-testid="letter-voice-note"]')).toBeVisible();
+
+    const audioSrc = await paper.locator('audio').getAttribute('src');
+    expect(audioSrc).toBe(dummyWav);
+
+    // Assert PDF download succeeds with zero /SMask
+    const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+    await page.locator('#rPdf').click();
+    const download = await downloadPromise;
+    const filePath = await download.path();
+    if (filePath) {
+      const buf = fs.readFileSync(filePath);
+      expect(buf.includes(Buffer.from('/SMask'))).toBe(false);
     }
   });
 });

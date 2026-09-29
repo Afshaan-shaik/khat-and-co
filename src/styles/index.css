@@ -1300,9 +1300,19 @@ textarea.field {
   gap: 12px;
   font-family: 'Hanken Grotesk', sans-serif;
   font-size: .85rem;
-  background: rgba(31, 35, 64, .08);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ink) 22%, transparent);
   padding: 8px 12px;
   border-radius: 10px;
+  color: var(--ink);
+}
+
+.cassette-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .cassette audio {
@@ -2338,10 +2348,13 @@ footer .container {
 
 /* Print Styles */
 @media print {
-  /* Hide page background, grain overlay, and site chrome */
+  /* Hide page background, grain overlay, and site chrome while preserving exact letter colors */
+  html,
   body {
     background: #fff !important;
-    color: #000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   body::before {
     display: none !important;
@@ -2365,11 +2378,17 @@ footer .container {
   .reader-stage,
   .envelope-card,
   .ps-tear,
-  .cassette,
   button,
   .field,
   .day {
     display: none !important;
+  }
+
+  /* Audio cassette in print: visible only when attached */
+  .cassette {
+    display: flex !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Unseal and flatten reader overlay into clean printable page */
@@ -2405,11 +2424,13 @@ footer .container {
     break-inside: avoid !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   .paper * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
 
   /* Ensure inputs on author canvas print cleanly without dashed borders */

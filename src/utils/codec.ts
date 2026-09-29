@@ -26,6 +26,7 @@ export function encodeLetterToHash(letter: LetterData): string {
         c: letter.waxSeal.isCustom ? 1 : 0,
         t: letter.waxSeal.customText || ''
       } : undefined,
+      vnu: letter.voiceNoteUrl ? String(letter.voiceNoteUrl) : undefined,
       st: (letter.stickers || []).slice(0, 40).map((stk) => ({
         id: stk.id,
         sId: stk.stickerId,
@@ -199,7 +200,8 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
       unlockDate: raw.unlockDate || raw.o || '',
       passphrase: raw.passphrase || raw.p || '',
       fontSize: raw.fontSize || raw.g || 'm',
-      language: raw.language || (raw.e === 'hi' ? 'hi' : 'en')
+      language: raw.language || (raw.e === 'hi' ? 'hi' : 'en'),
+      voiceNoteUrl: raw.vnu || raw.voiceNoteUrl || null
     };
 
     return letter;
