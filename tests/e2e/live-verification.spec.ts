@@ -1,9 +1,24 @@
 import { test, expect } from '@playwright/test';
+import { encodeLetterToHash } from '../../src/utils/codec';
+import { createDefaultLetter } from '../../src/utils/storage';
+import { LetterData } from '../../src/types/letter';
 
-test.describe('Live Vercel App Verification', () => {
-  test('strictly displays closed sealed envelope on live short link with zero workspace preview', async ({ page }) => {
-    // Navigate directly to live Vercel app with a test share id
-    await page.goto('https://khat-and-co.vercel.app/?id=1eEiq964cu');
+test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
+
+  test('strictly displays closed sealed envelope on live share link with custom wax seal', async ({ page }) => {
+    // Construct a letter with custom wax seal (Infinity ∞)
+    const testLetter: LetterData = {
+      ...createDefaultLetter(),
+      recipient: 'Anaya',
+      sender: 'Afshaan',
+      waxSeal: { id: 'infinity', symbol: '∞', isCustom: false, customText: 'A' }
+    };
+
+    const hash = encodeLetterToHash(testLetter);
+
+    // Navigate to live Vercel app with hash
+    await page.goto(`https://khath-and-co.vercel.app/#l=${hash}`);
+    await page.evaluate(() => document.fonts.ready);
 
     // 1. Envelope modal must be open immediately
     await expect(page.locator('.envelope-modal-backdrop')).toBeVisible();
@@ -14,18 +29,23 @@ test.describe('Live Vercel App Verification', () => {
 
     // 3. Sealed closed envelope card with pulsing wax seal must be visible
     await expect(page.locator('.envelope-card')).toBeVisible();
-    await expect(page.locator('.pulsing-wax-seal')).toBeVisible();
+    const waxSealBtn = page.getByTestId('envelope-wax-seal');
+    await expect(waxSealBtn).toBeVisible();
 
-    // 4. Revealed letter container must NOT be visible before tapping wax seal
+    // 4. Custom wax seal symbol '∞' MUST be present on the live envelope
+    await expect(waxSealBtn).toHaveAttribute('data-seal-symbol', '∞');
+    await expect(waxSealBtn).toContainText('∞');
+
+    // 5. Revealed letter container must NOT be visible before tapping wax seal
     await expect(page.locator('.envelope-revealed-container')).not.toBeVisible();
 
-    // Take screenshot of strictly sealed closed envelope
+    // Take screenshot of live sealed envelope with custom wax seal
     await page.screenshot({ path: 'test-results/live-sealed-envelope.png' });
 
-    // 5. Tap the pulsing wax seal
-    await page.locator('.pulsing-wax-seal').click({ force: true });
+    // 6. Tap the wax seal
+    await waxSealBtn.click({ force: true });
 
-    // 6. After unsealing, revealed letter sheet is visible
+    // 7. After unsealing, revealed letter sheet is visible
     await expect(page.locator('.envelope-revealed-container')).toBeVisible({ timeout: 6000 });
     await expect(page.getByText('Write Back (जवाब लिखें)')).toBeVisible();
 
@@ -33,8 +53,9 @@ test.describe('Live Vercel App Verification', () => {
     await page.screenshot({ path: 'test-results/live-opened-letter.png' });
   });
 
-  test('author desk loads normally without query param on live Vercel app', async ({ page }) => {
-    await page.goto('https://khat-and-co.vercel.app/');
+  test('author desk loads normally on live Vercel app', async ({ page }) => {
+    await page.goto('https://khath-and-co.vercel.app/');
+    await page.evaluate(() => document.fonts.ready);
 
     // Workspace layout and header are visible for the author
     await expect(page.locator('.workspace-layout')).toBeVisible();
@@ -48,4 +69,5 @@ test.describe('Live Vercel App Verification', () => {
     // Take screenshot of author desk
     await page.screenshot({ path: 'test-results/live-author-desk.png' });
   });
+
 });
