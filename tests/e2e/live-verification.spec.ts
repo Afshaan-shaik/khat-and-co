@@ -163,11 +163,39 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
       await page.locator('.studio-back-btn').click();
     }
 
-    // Scroll to top and screenshot updated header
-    await page.evaluate(() => window.scrollTo(0, 0));
+      // Scroll to top and screenshot updated header
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: 'test-results/live-updated-header.png' });
+    }
+  });
+
+  test('verifies live header remains sticky and intact at top: 0 with blur and transparency when user scrolls down', async ({ page }) => {
+    await page.goto('https://khath-and-co.vercel.app/');
+    await page.evaluate(() => document.fonts.ready);
+
+    const nav = page.locator('header.nav');
+    await expect(nav).toBeVisible();
+
+    // Verify initial box at top: 0
+    const boxBefore = await nav.boundingBox();
+    expect(boxBefore).not.toBeNull();
+    expect(boxBefore!.y).toBeLessThanOrEqual(1);
+
+    // Scroll down 600px
+    await page.evaluate(() => window.scrollTo(0, 600));
     await page.waitForTimeout(400);
-    await page.screenshot({ path: 'test-results/live-updated-header.png' });
+
+    // Header must remain intact at top: 0
+    const boxAfter = await nav.boundingBox();
+    expect(boxAfter).not.toBeNull();
+    expect(boxAfter!.y).toBe(0);
+    await expect(nav).toBeVisible();
+
+    // Screenshot scrolled header
+    await page.screenshot({ path: 'test-results/live-scrolled-header.png' });
   });
 
 });
+
 
