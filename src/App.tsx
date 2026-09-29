@@ -24,9 +24,17 @@ import { StickerDrawer } from './components/StickerDrawer';
 import { EnvelopeModal } from './components/EnvelopeModal';
 import { PromptModal } from './components/PromptModal';
 
+// New feature components
+import { Studio } from './components/Studio';
+import { WaxSealData } from './components/WaxSealPicker';
+import { VoiceWizard } from './components/VoiceWizard';
+import { InspireMe } from './components/InspireMe';
+import { TimeCapsuleManager } from './components/TimeCapsuleManager';
+import { SealedUntilFuture } from './components/SealedUntilFuture';
+import { YourDesk } from './components/YourDesk';
+
 /**
  * Checks synchronously whether the current URL is a shared letter link.
- * Matches ?id=..., #id=..., and standalone hash payloads #l=... or raw hashes.
  */
 function hasIncomingShare(): boolean {
   if (typeof window === 'undefined') return false;
@@ -69,7 +77,7 @@ export const App: React.FC = () => {
   // Mobile active tab ('write' | 'paper' | 'stickers')
   const [mobileTab, setMobileTab] = useState<'write' | 'paper' | 'stickers'>('write');
 
-  // Recipient Flow state: strictly true from frame 0 if opened via share link
+  // Recipient Flow state
   const [isRecipientFlow, setIsRecipientFlow] = useState<boolean>(hasIncomingShare);
   const [isEnvelopeOpen, setIsEnvelopeOpen] = useState<boolean>(hasIncomingShare);
   const [isLoadingSharedLetter, setIsLoadingSharedLetter] = useState<boolean>(() => {
@@ -80,6 +88,20 @@ export const App: React.FC = () => {
   // Modals state
   const [isPromptOpen, setIsPromptOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // New feature modals
+  const [isStudioOpen, setIsStudioOpen] = useState(false);
+  const [isVoiceWizardOpen, setIsVoiceWizardOpen] = useState(false);
+  const [isTimeCapsuleOpen, setIsTimeCapsuleOpen] = useState(false);
+  const [isSealedUntilFutureOpen, setIsSealedUntilFutureOpen] = useState(false);
+  const [isYourDeskOpen, setIsYourDeskOpen] = useState(false);
+
+  // Wax seal data (persisted per session)
+  const [sealData, setSealData] = useState<WaxSealData>({
+    symbol: '♡',
+    isCustom: false,
+    customText: 'A',
+  });
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -112,7 +134,7 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [letter]);
 
-  // Check URL Hash & Search Query for shared letter on load & on hashchange
+  // Check URL Hash & Search Query for shared letter
   useEffect(() => {
     let cancelled = false;
 
@@ -188,23 +210,15 @@ export const App: React.FC = () => {
     handleUpdateLetter({ ruledLines: !letter.ruledLines });
   };
 
-  // Add Sticker — perfectly straight (0° rotation) and centered horizontally on the letter
+  // Add Sticker
   const handleAddSticker = (stickerDef: StickerDefinition) => {
     const letterEl = letterSheetRef.current;
     const letterRect = letterEl?.getBoundingClientRect();
     const letterWidth = letterRect?.width || 640;
     const stickerWidth = stickerDef.width || 80;
-
-    // Convert sticker pixel width to percentage of sheet width
     const stickerWidthPercent = (stickerWidth / letterWidth) * 100;
-
-    // Center horizontally: exactly half of sheet width minus half of sticker width
-    // Ensures equal spacing on both left and right (not a little left nor a little right)
     const centeredX = Math.round((50 - stickerWidthPercent / 2) * 10) / 10;
-
-    // Proper vertical focal placement on the letter
     const count = letter.stickers.length;
-    // Keep it in the clean reading area, gently staggering if user adds multiple consecutive stickers
     const placedY = Math.round(Math.min(36 + ((count % 5) * 6), 62) * 10) / 10;
 
     const newPlaced: PlacedSticker = {
@@ -213,21 +227,20 @@ export const App: React.FC = () => {
       x: centeredX,
       y: placedY,
       scale: 1,
-      rotation: 0, // Strictly straight (0° rotation, no tilt)
+      rotation: 0,
       zIndex: Math.max(...letter.stickers.map((s) => s.zIndex), 0) + 1
     };
 
     handleUpdateLetter({ stickers: [...letter.stickers, newPlaced] });
 
-    // On mobile, switch back to 'write' tab so user immediately sees their placed sticker on the letter
     if (typeof window !== 'undefined' && window.innerWidth <= 767) {
       setMobileTab('write');
     }
 
-    showToast(`Added "${stickerDef.name}" straight to your letter!`);
+    showToast(`Added "${stickerDef.name}" to your letter!`);
   };
 
-  // Share Letter Link (Ultra-short, WhatsApp & Messenger friendly)
+  // Share Letter Link
   const handleShareLink = async () => {
     showToast('✉️ Creating short link...');
 
@@ -239,7 +252,6 @@ export const App: React.FC = () => {
       shareUrl = `${base}#l=${encodeLetterToHash(letter)}`;
     }
 
-    // On mobile devices, offer native Web Share if supported
     const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile && navigator.share) {
       try {
@@ -255,7 +267,6 @@ export const App: React.FC = () => {
       }
     }
 
-    // Copy clean short URL to clipboard with fallback
     const copied = await copyTextToClipboard(shareUrl);
     if (copied) {
       showToast('✉️ Short link copied! Ready to paste and send.');
@@ -264,7 +275,7 @@ export const App: React.FC = () => {
     }
   };
 
-  // Save as Picture (PNG)
+  // Save as Picture
   const handleSavePicture = async () => {
     if (!letterSheetRef.current) return;
     try {
@@ -356,20 +367,27 @@ export const App: React.FC = () => {
     }
   };
 
+  // Inspire Me — append prompt to letter body
+  const handleUsePrompt = (prompt: string) => {
+    const current = letter.body;
+    const addition = current.trim() ? `\n\n${prompt}` : prompt;
+    handleUpdateLetter({ body: current + addition });
+    showToast('✦ Inspiration added to your letter.');
+  };
+
   const currentTemplate =
     PAPER_TEMPLATES.find((t) => t.id === letter.templateId) || PAPER_TEMPLATES[0];
 
   return (
     <div className={`app-shell ${isRecipientFlow ? 'recipient-mode' : ''}`}>
-      {/* 
+      {/*
         CRITICAL RECIPIENT FLOW GUARANTEE:
-        When a recipient opens a shared letter link, the author desk, header, and 
-        workspace are NEVER rendered. This ensures ZERO preview/spoiler flash.
-        The recipient sees ONLY the closed, sealed envelope with the wax seal.
+        When a recipient opens a shared letter link, the author desk, header, and
+        workspace are NEVER rendered.
       */}
       {!isRecipientFlow && (
         <>
-          {/* Sticky Header with non-truncated brand identity and responsive action bar */}
+          {/* Sticky Header */}
           <Header
             theme={theme}
             onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -378,16 +396,22 @@ export const App: React.FC = () => {
             onShareLink={handleShareLink}
             onSavePicture={handleSavePicture}
             isExporting={isExporting}
+            onOpenStudio={() => setIsStudioOpen(true)}
+            onOpenYourDesk={() => setIsYourDeskOpen(true)}
+            onOpenSealedUntilFuture={() => setIsSealedUntilFutureOpen(true)}
+            onOpenTimeCapsule={() => setIsTimeCapsuleOpen(true)}
+            onOpenVoiceWizard={() => setIsVoiceWizardOpen(true)}
+            onOpenInspireMe={() => {/* Inspire Me is inline in the sidebar and Studio */}}
           />
 
-          {/* Mobile Tab Bar (< 960px) */}
+          {/* Mobile Tab Bar (<960px) */}
           <nav className="mobile-tab-bar d-flex d-md-none" aria-label="Mobile navigation tabs">
             <button
               type="button"
               className={`mobile-tab-btn ${mobileTab === 'paper' ? 'active' : ''}`}
               onClick={() => setMobileTab('paper')}
             >
-              Paper &amp; Ink
+              Paper & Ink
             </button>
             <button
               type="button"
@@ -405,7 +429,7 @@ export const App: React.FC = () => {
             </button>
           </nav>
 
-          {/* Two-column workspace: left panel and right stage ending on the exact same baseline */}
+          {/* Two-column workspace */}
           <div className="workspace-layout">
 
             {/* ── LEFT SIDEBAR PANEL ── */}
@@ -445,13 +469,13 @@ export const App: React.FC = () => {
                 />
               </section>
 
-              {/* Sticker & Stamp Collection (Docked at the bottom) */}
+              {/* Sticker & Stamp Collection */}
               <section
                 className={`sidebar-section sticker-docked-section ${mobileTab === 'paper' ? 'd-none d-md-block' : ''}`}
                 aria-labelledby="sticker-section-label"
               >
                 <div className="section-label" id="sticker-section-label">
-                  <span>Stickers &amp; Stamps</span>
+                  <span>Stickers & Stamps</span>
                 </div>
                 <StickerDrawer
                   onAddSticker={handleAddSticker}
@@ -460,21 +484,39 @@ export const App: React.FC = () => {
                 />
               </section>
 
+              {/* ── Sidebar: Inspire Me (desktop inline) ── */}
+              <section className="sidebar-section d-none d-md-block" aria-labelledby="inspire-sidebar-label">
+                <div className="section-label" id="inspire-sidebar-label">
+                  <span>✦ Inspiration</span>
+                </div>
+                <InspireMe onUsePrompt={handleUsePrompt} />
+              </section>
+
             </aside>
 
-            {/* ── RIGHT STAGE DESK (Letter sheet + Actions at the ending of the letter) ── */}
+            {/* ── RIGHT STAGE DESK ── */}
             <main
               className={`editor-column ${mobileTab === 'write' ? 'mobile-visible' : ''}`}
               data-testid="stage"
               aria-label="Letter writing area"
             >
+              {/* Voice Wizard — inline above editor on mobile when triggered */}
+              {isVoiceWizardOpen && (
+                <div className="editor-voice-wizard-wrap">
+                  <VoiceWizard
+                    isOpen={isVoiceWizardOpen}
+                    onClose={() => setIsVoiceWizardOpen(false)}
+                  />
+                </div>
+              )}
+
               <LetterEditor
                 letter={letter}
                 onChangeLetter={handleUpdateLetter}
                 letterSheetRef={letterSheetRef}
               />
 
-              {/* Desk Actions — Ending of the letter matching uploaded web page reference */}
+              {/* Desk Actions */}
               <div className="desk-actions" role="toolbar" aria-label="Letter actions">
                 <button
                   type="button"
@@ -489,6 +531,18 @@ export const App: React.FC = () => {
                     <line x1="12" y1="15" x2="12" y2="3" />
                   </svg>
                   <span>{isExporting ? 'Saving...' : 'Save as picture'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-khat-secondary"
+                  onClick={() => setIsStudioOpen(true)}
+                  title="Open Studio for premium letter creation"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" />
+                  </svg>
+                  <span>Open Studio</span>
                 </button>
 
                 <button
@@ -533,18 +587,19 @@ export const App: React.FC = () => {
                 </button>
               </div>
 
-              {/* Footer branding with creator attribution */}
+              {/* Footer branding */}
               <footer className="app-footer">
                 <div className="app-footer-brand">
                   <p className="app-footer-name">
-                    Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&amp;</span> Co.
+                    Khath <span style={{ color: 'var(--rose)', fontStyle: 'italic' }}>&</span> Co.
                   </p>
                   <p className="app-footer-tagline">
                     खत · letters for the people you miss · Free, no-login digital stationery
                   </p>
+                  <p className="app-footer-tagline" style={{ marginTop: '6px', opacity: 0.75, fontSize: '12px' }}>
+                    Seal it, leave your voice, or send it into the future.
+                  </p>
                 </div>
-
-                {/* Creator attribution 4-5 lines down, aligned to the far right end side */}
                 <div className="app-footer-credit-row">
                   <p className="app-footer-credit">
                     <span className="credit-label">crafted by -</span>
@@ -569,7 +624,51 @@ export const App: React.FC = () => {
         </>
       )}
 
-      {/* Bilingual Weekly Writing Prompts Modal */}
+      {/* ══════════════ FEATURE MODALS & OVERLAYS ══════════════ */}
+
+      {/* Studio */}
+      <Studio
+        isOpen={isStudioOpen}
+        onClose={() => setIsStudioOpen(false)}
+        letter={letter}
+        onChangeLetter={handleUpdateLetter}
+        onSelectTemplate={handleSelectTemplate}
+        onSelectFont={handleSelectFont}
+        onSelectInk={handleSelectInk}
+        onToggleRuledLines={handleToggleRuledLines}
+        onAddSticker={handleAddSticker}
+        sealData={sealData}
+        onChangeSeal={setSealData}
+        onPreviewEnvelope={() => { setIsStudioOpen(false); handlePreviewEnvelope(); }}
+        onShareLink={handleShareLink}
+        onSavePicture={handleSavePicture}
+        isExporting={isExporting}
+      />
+
+      {/* Your Desk */}
+      <YourDesk
+        isOpen={isYourDeskOpen}
+        onClose={() => setIsYourDeskOpen(false)}
+        letter={letter}
+        onEditDraft={() => setIsYourDeskOpen(false)}
+        onPreviewEnvelope={() => { setIsYourDeskOpen(false); handlePreviewEnvelope(); }}
+        onOpenSealedUntilFuture={() => { setIsYourDeskOpen(false); setIsSealedUntilFutureOpen(true); }}
+        onOpenTimeCapsule={() => { setIsYourDeskOpen(false); setIsTimeCapsuleOpen(true); }}
+      />
+
+      {/* Sealed Until Future */}
+      <SealedUntilFuture
+        isOpen={isSealedUntilFutureOpen}
+        onClose={() => setIsSealedUntilFutureOpen(false)}
+      />
+
+      {/* Letter Time Capsule */}
+      <TimeCapsuleManager
+        isOpen={isTimeCapsuleOpen}
+        onClose={() => setIsTimeCapsuleOpen(false)}
+      />
+
+      {/* Weekly Writing Prompts Modal */}
       <PromptModal
         isOpen={isPromptOpen}
         onClose={() => setIsPromptOpen(false)}
