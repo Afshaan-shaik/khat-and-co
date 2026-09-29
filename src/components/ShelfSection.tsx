@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LetterData } from '../types/letter';
 import { renderPostageStampSvg, renderPostmarkSvg } from '../utils/stamps';
+import { isSupabaseConfigured, fetchShelfFromSupabase, backupAllSiteDataToSupabase } from '../services/supabase';
 
 interface ShelfSectionProps {
   onOpenLetter: (letter: LetterData) => void;
@@ -86,24 +87,72 @@ const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
 export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLettersTrigger }) => {
   const [shelfLetters, setShelfLetters] = useState<(LetterData & { sample?: boolean })[]>([]);
   const [isSample, setIsSample] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('khath:shelf');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setShelfLetters(parsed);
-          setIsSample(false);
-          return;
+    let cancelled = false;
+
+    async function loadShelf() {
+      // 1. Try Supabase first if configured
+      if (isSupabaseConfigured()) {
+        try {
+          const remote = await fetchShelfFromSupabase();
+          if (!cancelled && remote && remote.length > 0) {
+            setShelfLetters(remote);
+            setIsSample(false);
+            return;
+          }
+        } catch {
+          // fallback to localStorage
         }
       }
-    } catch {
-      // Fallback
+
+      // 2. Fallback to localStorage
+      try {
+        const stored = localStorage.getItem('khath:shelf');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (!cancelled && Array.isArray(parsed) && parsed.length > 0) {
+            setShelfLetters(parsed);
+            setIsSample(false);
+            return;
+          }
+        }
+      } catch {
+        // Fallback
+      }
+
+      if (!cancelled) {
+        setShelfLetters(SAMPLES());
+        setIsSample(true);
+      }
     }
-    setShelfLetters(SAMPLES());
-    setIsSample(true);
+
+    loadShelf();
+
+    return () => {
+      cancelled = true;
+    };
   }, [sentLettersTrigger]);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncStatus('Backing up data to Supabase...');
+    const result = await backupAllSiteDataToSupabase();
+    setIsSyncing(false);
+    if (result.success) {
+      setSyncStatus(`Backed up ${result.syncedCount} letter(s) to Supabase Storage & DB!`);
+      const remote = await fetchShelfFromSupabase();
+      if (remote && remote.length > 0) {
+        setShelfLetters(remote);
+        setIsSample(false);
+      }
+    } else {
+      setSyncStatus(result.error || 'Sync failed');
+    }
+    setTimeout(() => setSyncStatus(null), 4000);
+  };
 
   const fmtDate = (str?: string) => {
     if (!str) return 'Recently';
@@ -113,11 +162,31 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLe
   return (
     <section className="section" id="shelf">
       <div className="container">
-        <div className="shelf-head rv in">
-          <h2>The shelf</h2>
-          <p className="lead">
-            Every letter you send stacks up here, oldest at the back. Tap one to open it again.
-          </p>
+        <div className="shelf-head rv in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h2>The shelf</h2>
+            <p className="lead">
+              Every letter you send stacks up here, oldest at the back. Tap one to open it again.
+            </p>
+          </div>
+          {isSupabaseConfigured() && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+              <button
+                type="button"
+                className="btn ghost sm"
+                onClick={handleSync}
+                disabled={isSyncing}
+                style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+              >
+                {isSyncing ? 'Syncing...' : '☁ Backup to Supabase'}
+              </button>
+              {syncStatus && (
+                <span style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>
+                  {syncStatus}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="shelf in" id="shelfRow">

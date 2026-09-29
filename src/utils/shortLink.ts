@@ -2,19 +2,34 @@ import { LetterData } from '../types/letter';
 import { encodeLetterToHash, decodeLetterFromHash } from './codec';
 import { sanitizeLoadedLetter } from './storage';
 
+import { isSupabaseConfigured, saveLetterToDatabase, getLetterFromSupabase } from '../services/supabase';
+
 const BYTEBIN_ENDPOINT = 'https://bytebin.lucko.me';
 
 /**
  * Creates an ultra-short sharing URL for the letter.
- * Saves the letter payload and returns a concise link:
- * e.g. https://khat-and-co.vercel.app/?id=VVV4iyNYrX (45 chars)
- * Falls back immediately to the standalone hash (#l=...) if offline.
+ * Saves the letter payload into Supabase PostgreSQL & Storage,
+ * returning a concise link: e.g. https://khath-and-co.vercel.app/?id=aB3xZ9k2
+ * Falls back to Bytebin and standalone hash (#l=...) if Supabase is unconfigured/offline.
  */
 export async function createShortShareUrl(letter: LetterData): Promise<string> {
   const origin = window.location.origin;
   const pathname = window.location.pathname.replace(/\/$/, '');
   const base = `${origin}${pathname}/`;
 
+  // 1. Try Supabase first (Database + Storage)
+  if (isSupabaseConfigured()) {
+    try {
+      const result = await saveLetterToDatabase(letter);
+      if (result?.slug) {
+        return `${base}?id=${encodeURIComponent(result.slug)}`;
+      }
+    } catch (err) {
+      console.warn('Supabase save failed, falling back to bytebin/hash:', err);
+    }
+  }
+
+  // 2. Fallback: Bytebin temporary store
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -41,7 +56,7 @@ export async function createShortShareUrl(letter: LetterData): Promise<string> {
     console.warn('Short link creation failed, falling back to standalone hash URL:', err);
   }
 
-  // Fallback: standalone hash URL
+  // 3. Fallback: Standalone compressed URL hash
   const encoded = encodeLetterToHash(letter);
   return `${base}#l=${encoded}`;
 }
@@ -102,6 +117,17 @@ export async function resolveSharedLetter(
  * Fetches and sanitizes a letter payload by its short ID.
  */
 async function fetchLetterById(id: string): Promise<LetterData | null> {
+  // 1. Check Supabase first
+  if (isSupabaseConfigured()) {
+    try {
+      const fromSupabase = await getLetterFromSupabase(id);
+      if (fromSupabase) return fromSupabase;
+    } catch (err) {
+      console.warn(`Supabase fetch failed for id "${id}":`, err);
+    }
+  }
+
+  // 2. Fallback to Bytebin
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);

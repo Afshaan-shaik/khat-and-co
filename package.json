@@ -10,6 +10,7 @@
     "test": "node ./node_modules/@playwright/test/cli.js test"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "bootstrap": "^5.3.3",
     "html-to-image": "^1.11.11",
     "lz-string": "^1.5.0",
