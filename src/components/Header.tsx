@@ -19,7 +19,8 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({
   theme,
-  onToggleTheme
+  onToggleTheme,
+  onOpenStudio
 }) => {
   const isDark = theme === 'dark';
 
@@ -40,6 +41,25 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Navigation Section Links */}
         <nav className="nav-links" aria-label="Sections">
           <a href="#studio">Write</a>
+          <a
+            href="#studio"
+            role="button"
+            className="nav-studio"
+            onClick={() => {
+              if (onOpenStudio) {
+                onOpenStudio();
+              }
+            }}
+            aria-label="Open Studio"
+            data-testid="nav-studio"
+            style={{
+              color: isDark ? 'var(--text)' : '#000000',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            Studio
+          </a>
           <a href="#shelf">Shelf</a>
           <a href="#nudge">Nudge</a>
         </nav>

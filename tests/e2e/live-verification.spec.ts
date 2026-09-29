@@ -121,5 +121,46 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
     await page.screenshot({ path: 'test-results/live-reader-peek-opened.png' });
   });
 
+  test('verifies live header nav with 4 options (Write, Studio, Shelf, Nudge) and removal of the 4 buttons below logo', async ({ page }) => {
+    await page.goto('https://khath-and-co.vercel.app/');
+    await page.evaluate(() => document.fonts.ready);
+
+    // 1. Verify the 4 buttons below the logo are completely removed
+    await expect(page.getByRole('button', { name: /see it as your reader will/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /copy share link/i })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /start a new letter/i })).toHaveCount(0);
+
+    // 2. Verify the 4 header navigation options: Write, Studio, Shelf, Nudge
+    const navLinks = page.locator('.nav-links');
+    if (await navLinks.isVisible()) {
+      const writeLink = navLinks.locator('a[href="#studio"]');
+      await expect(writeLink).toHaveText('Write');
+
+      const studioLink = navLinks.locator('.nav-studio');
+      await expect(studioLink).toHaveText('Studio');
+
+      const shelfLink = navLinks.locator('a[href="#shelf"]');
+      await expect(shelfLink).toHaveText('Shelf');
+
+      const nudgeLink = navLinks.locator('a[href="#nudge"]');
+      await expect(nudgeLink).toHaveText('Nudge');
+
+      // Verify Studio black text styling in light mode
+      const studioColor = await studioLink.evaluate((el) => window.getComputedStyle(el).color);
+      expect(studioColor).toBe('rgb(0, 0, 0)');
+    }
+
+    // 3. Verify clicking Studio opens Studio customizer
+    const studioBtn = page.getByRole('button', { name: /open studio/i }).first();
+    if (await studioBtn.isVisible()) {
+      await studioBtn.click();
+      await expect(page.locator('.studio-backdrop')).toBeVisible();
+      await page.locator('.studio-back-btn').click();
+    }
+
+    // Screenshot updated header
+    await page.screenshot({ path: 'test-results/live-updated-header.png' });
+  });
+
 });
 

@@ -84,8 +84,14 @@ export async function resolveSharedLetter(
     }
   }
 
-  // 3. Check legacy or standalone hash: #l=... or raw hash
-  if (hash && (hash.startsWith('#l=') || (hash.length > 5 && !hash.startsWith('#id=')))) {
+  // Ignore standard in-page navigation anchors
+  const PAGE_ANCHORS = ['#top', '#studio', '#shelf', '#nudge', '#step1', '#step2', '#step3'];
+  if (PAGE_ANCHORS.includes(hash)) {
+    return null;
+  }
+
+  // 3. Check legacy or standalone hash: #l=... or valid long encoded hash
+  if (hash && (hash.startsWith('#l=') || hash.startsWith('#letter=') || (hash.length > 25 && !hash.startsWith('#id=')))) {
     return decodeLetterFromHash(hash);
   }
 

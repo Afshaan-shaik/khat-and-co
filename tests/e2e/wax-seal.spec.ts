@@ -158,8 +158,9 @@ test.describe('Wax Seal Deterministic Persistence & Lifecycle', () => {
     await page.reload();
     await waitForPageReady(page);
 
-    // Reopen preview envelope
-    await page.getByRole('button', { name: /see it as your reader will/i }).first().click();
+    // Reopen preview envelope via Studio
+    await page.getByRole('button', { name: /open studio/i }).first().click();
+    await page.locator('.studio-header-actions').getByRole('button', { name: /preview/i }).click();
 
     // Envelope must still have 'K' wax seal
     const envelopeWaxSeal = page.getByTestId('envelope-wax-seal');
