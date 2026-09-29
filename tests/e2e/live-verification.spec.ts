@@ -163,11 +163,10 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
       await page.locator('.studio-back-btn').click();
     }
 
-      // Scroll to top and screenshot updated header
-      await page.evaluate(() => window.scrollTo(0, 0));
-      await page.waitForTimeout(400);
-      await page.screenshot({ path: 'test-results/live-updated-header.png' });
-    }
+    // Scroll to top and screenshot updated header
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: 'test-results/live-updated-header.png' });
   });
 
   test('verifies live header remains sticky and intact at top: 0 with blur and transparency when user scrolls down', async ({ page }) => {
