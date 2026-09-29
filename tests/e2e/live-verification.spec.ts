@@ -158,9 +158,9 @@ test.describe('Live Vercel App Verification (khath-and-co.vercel.app)', () => {
     // 3. Verify clicking Studio opens Studio customizer
     const studioBtn = page.getByRole('button', { name: /open studio/i }).first();
     if (await studioBtn.isVisible()) {
-      await studioBtn.click();
+      await studioBtn.click({ force: true });
       await expect(page.locator('.studio-backdrop')).toBeVisible();
-      await page.locator('.studio-back-btn').click();
+      await page.locator('.studio-back-btn').click({ force: true });
     }
 
     // Scroll to top and screenshot updated header

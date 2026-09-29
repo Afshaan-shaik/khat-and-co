@@ -501,12 +501,18 @@ textarea.field {
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 700px) {
   .brand-envelope-mark {
-    height: 42px;
+    height: 36px;
   }
   .brand-title {
-    font-size: 1.25rem;
+    font-size: 1.12rem;
+  }
+  .brand-tagline {
+    display: none;
+  }
+  .khat-brand-lockup {
+    gap: 8px;
   }
 }
 
@@ -515,13 +521,13 @@ textarea.field {
     display: none;
   }
   .brand-envelope-mark {
-    height: 34px;
+    height: 32px;
   }
   .brand-title {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
   }
   .khat-brand-lockup {
-    gap: 8px;
+    gap: 6px;
   }
 }
 
