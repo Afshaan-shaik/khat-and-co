@@ -124,15 +124,21 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
     let cancelled = false;
 
     async function loadShelf() {
+      const currentBin = loadRecycleBin();
+      const binIds = new Set(currentBin.map((b) => b.id));
+
       // 1. Try Supabase first if configured
       if (isSupabaseConfigured()) {
         try {
           const remote = await fetchShelfFromSupabase();
           if (!cancelled && remote && remote.length > 0) {
-            setShelfLetters(remote);
-            setIsSample(false);
-            setBinItems(loadRecycleBin());
-            return;
+            const activeRemote = remote.filter((l) => !binIds.has(l.id || getLetterId(l)));
+            if (activeRemote.length > 0) {
+              setShelfLetters(activeRemote);
+              setIsSample(false);
+              setBinItems(currentBin);
+              return;
+            }
           }
         } catch {
           // fallback to localStorage
@@ -143,11 +149,14 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
       try {
         const stored = loadShelfLetters();
         if (stored && stored.length > 0) {
-          if (!cancelled) {
-            setShelfLetters(stored);
-            setIsSample(false);
-            setBinItems(loadRecycleBin());
-            return;
+          const activeStored = stored.filter((l) => !binIds.has(l.id || getLetterId(l)));
+          if (activeStored.length > 0) {
+            if (!cancelled) {
+              setShelfLetters(activeStored);
+              setIsSample(false);
+              setBinItems(currentBin);
+              return;
+            }
           }
         }
       } catch {
@@ -155,9 +164,10 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
       }
 
       if (!cancelled) {
-        setShelfLetters(SAMPLES());
+        const activeSamples = SAMPLES().filter((l) => !binIds.has(getLetterId(l)));
+        setShelfLetters(activeSamples);
         setIsSample(true);
-        setBinItems(loadRecycleBin());
+        setBinItems(currentBin);
       }
     }
 
@@ -177,7 +187,8 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
       setSyncStatus(`Backed up ${result.syncedCount} letter(s) to Supabase Storage & DB!`);
       const remote = await fetchShelfFromSupabase();
       if (remote && remote.length > 0) {
-        setShelfLetters(remote);
+        const binIds = new Set(loadRecycleBin().map((b) => b.id));
+        setShelfLetters(remote.filter((l) => !binIds.has(l.id || getLetterId(l))));
         setIsSample(false);
       }
     } else {
@@ -197,16 +208,16 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
     e.stopPropagation();
     sfx.rustle();
 
-    if ((letter as any).sample) {
-      setShelfLetters((prev) => prev.filter((l) => l !== letter));
-      showToast?.('Sample letter removed.');
-      return;
-    }
-
+    const targetId = letter.id || getLetterId(letter);
     moveToRecycleBin(letter);
-    const updatedShelf = loadShelfLetters();
-    setShelfLetters(updatedShelf.length > 0 ? updatedShelf : SAMPLES());
-    setIsSample(updatedShelf.length === 0);
+
+    setShelfLetters((prev) =>
+      prev.filter((l) => {
+        const lId = l.id || getLetterId(l);
+        return lId !== targetId;
+      })
+    );
+
     setBinItems(loadRecycleBin());
     showToast?.('Letter moved to Recycle Bin.');
   };
