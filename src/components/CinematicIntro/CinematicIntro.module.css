@@ -23,8 +23,8 @@
   max-height: 100dvh;
   z-index: 99999;
   box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-top: calc(64px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   background: radial-gradient(ellipse at 50% 40%, var(--ci-bg), color-mix(in srgb, var(--ci-bg) 82%, #000));
   display: grid;
   place-items: center;
@@ -194,11 +194,11 @@
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 28px;
+  gap: clamp(16px, 2.8vh, 26px);
   perspective: 1200px;
   transition: transform 0.2s ease-out;
   width: 100%;
-  max-width: min(600px, 100vw);
+  max-width: min(560px, 100vw);
   padding: 0 16px;
   box-sizing: border-box;
 }
@@ -206,7 +206,8 @@
 /* ── Envelope & Layers ── */
 .env {
   position: relative;
-  width: min(540px, 84vw);
+  width: min(500px, 84vw, calc((100dvh - 180px) * 1.5 * 0.65));
+  min-width: min(300px, 84vw);
   aspect-ratio: 3 / 2;
   transform: translateY(40px) scale(0.9);
   opacity: 0;
@@ -281,7 +282,7 @@
   inset: 0;
   z-index: 3;
   background: var(--ci-paper2);
-  clip-path: polygon(0 0, 50% 58%, 100% 0, 100% 100%, 0 100%);
+  clip-path: polygon(0 0, 50% 62%, 100% 0, 100% 100%, 0 100%);
   border-radius: 4px;
   pointer-events: none;
 }
@@ -301,7 +302,7 @@
 
 /* When Envelope Opens */
 .env.open {
-  transform: translateY(48px);
+  transform: none;
 }
 
 .env.open .flap {
@@ -316,7 +317,7 @@
 }
 
 .env.open .letter {
-  transform: translateY(-40%);
+  transform: translateY(-28%);
 }
 
 /* ── Wax Seal Button ── */
@@ -548,10 +549,44 @@
     min-height: 90px;
   }
   .env.open {
-    transform: translateY(32px);
+    transform: none;
   }
   .env.open .letter {
-    transform: translateY(-38%);
+    transform: translateY(-28%);
+  }
+}
+
+/* ── Short Viewports (Landscape Mobile / Small Laptop Windows) ── */
+@media (max-height: 550px) {
+  .brand {
+    top: 8px;
+    font-size: 16px;
+  }
+  .topControls {
+    top: 6px;
+  }
+  .themeBtn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .skipBtn {
+    padding: 4px 12px;
+    font-size: 12px;
+  }
+  .stage {
+    gap: 12px;
+    transform: translateY(22px);
+  }
+  .env {
+    width: min(420px, 80vw, calc((100dvh - 110px) * 1.5 * 0.6));
+  }
+  .env.open .letter {
+    transform: translateY(-25%);
+  }
+  .cap {
+    font-size: 16px;
+    min-height: 24px;
   }
 }
 
