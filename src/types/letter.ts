@@ -35,8 +35,15 @@ export interface LetterData {
   unlockDate?: string; // YYYY-MM-DD
   passphrase?: string;
   voiceNoteUrl?: string | null;
+  id?: string; // unique identifier
   fontSize?: 's' | 'm' | 'l';
   language?: 'en' | 'hi';
+}
+
+export interface RecycleBinItem {
+  id: string; // unique identifier for the deleted letter
+  letter: LetterData;
+  deletedAt: string; // ISO timestamp
 }
 
 export interface PaperTemplate {

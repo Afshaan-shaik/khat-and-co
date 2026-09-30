@@ -1,9 +1,11 @@
-import { LetterData } from '../types/letter';
+import { LetterData, RecycleBinItem } from '../types/letter';
 import { PAPER_TEMPLATES } from '../constants/templates';
 import { DEFAULT_WAX_SEAL } from '../constants/waxSeal';
 
 export const DRAFT_STORAGE_KEY = 'khat-and-co:draft';
 export const THEME_STORAGE_KEY = 'khat-and-co:theme';
+export const SHELF_STORAGE_KEY = 'khath:shelf';
+export const RECYCLE_BIN_STORAGE_KEY = 'khath:shelf:recycle_bin';
 
 export function getFormattedToday(): string {
   try {
@@ -127,5 +129,124 @@ export function saveThemePreference(theme: 'dark' | 'light'): void {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
   } catch (err) {
     console.warn('Could not save theme preference', err);
+  }
+}
+
+export function getLetterId(letter: LetterData, fallbackIndex?: number): string {
+  if (letter.id) return letter.id;
+  const base = `${letter.recipient || 'recipient'}_${letter.date || 'date'}_${letter.body ? letter.body.slice(0, 15) : ''}`;
+  const clean = base.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+  return fallbackIndex !== undefined ? `${clean}_${fallbackIndex}` : `${clean}_${Date.now()}`;
+}
+
+export function loadShelfLetters(): LetterData[] {
+  try {
+    const raw = localStorage.getItem(SHELF_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item, idx) => {
+      const sanitized = sanitizeLoadedLetter(item);
+      if (!sanitized.id) {
+        sanitized.id = getLetterId(sanitized, idx);
+      }
+      return sanitized;
+    });
+  } catch (err) {
+    console.warn('Could not load shelf letters from localStorage', err);
+    return [];
+  }
+}
+
+export function saveShelfLetters(letters: LetterData[]): void {
+  try {
+    const cleaned = letters.map((l, idx) => ({
+      ...l,
+      id: l.id || getLetterId(l, idx)
+    }));
+    localStorage.setItem(SHELF_STORAGE_KEY, JSON.stringify(cleaned.slice(-30)));
+  } catch (err) {
+    console.warn('Could not save shelf letters to localStorage', err);
+  }
+}
+
+export function loadRecycleBin(): RecycleBinItem[] {
+  try {
+    const raw = localStorage.getItem(RECYCLE_BIN_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item, idx) => ({
+      id: item.id || `bin_${idx}_${Date.now()}`,
+      letter: sanitizeLoadedLetter(item.letter),
+      deletedAt: item.deletedAt || new Date().toISOString()
+    }));
+  } catch (err) {
+    console.warn('Could not load recycle bin from localStorage', err);
+    return [];
+  }
+}
+
+export function saveRecycleBin(items: RecycleBinItem[]): void {
+  try {
+    localStorage.setItem(RECYCLE_BIN_STORAGE_KEY, JSON.stringify(items));
+  } catch (err) {
+    console.warn('Could not save recycle bin to localStorage', err);
+  }
+}
+
+export function moveToRecycleBin(letter: LetterData): RecycleBinItem {
+  const shelf = loadShelfLetters();
+  const letterId = letter.id || getLetterId(letter);
+
+  // Remove from active shelf
+  const updatedShelf = shelf.filter((l) => {
+    if (l.id && letterId && l.id === letterId) return false;
+    if (l.date === letter.date && l.recipient === letter.recipient && l.body === letter.body) {
+      return false;
+    }
+    return true;
+  });
+  saveShelfLetters(updatedShelf);
+
+  // Add to recycle bin
+  const bin = loadRecycleBin();
+  const newItem: RecycleBinItem = {
+    id: letterId,
+    letter: { ...letter, id: letterId },
+    deletedAt: new Date().toISOString()
+  };
+  saveRecycleBin([newItem, ...bin.filter((b) => b.id !== letterId)]);
+  return newItem;
+}
+
+export function restoreFromRecycleBin(id: string): LetterData | null {
+  const bin = loadRecycleBin();
+  const item = bin.find((b) => b.id === id);
+  if (!item) return null;
+
+  // Remove from recycle bin
+  const updatedBin = bin.filter((b) => b.id !== id);
+  saveRecycleBin(updatedBin);
+
+  // Add back to shelf
+  const shelf = loadShelfLetters();
+  const restoredLetter = item.letter;
+  saveShelfLetters([...shelf, restoredLetter]);
+  return restoredLetter;
+}
+
+export function truncateFromRecycleBin(id: string): boolean {
+  const bin = loadRecycleBin();
+  const updatedBin = bin.filter((b) => b.id !== id);
+  saveRecycleBin(updatedBin);
+  return true;
+}
+
+export function emptyRecycleBin(): void {
+  try {
+    localStorage.removeItem(RECYCLE_BIN_STORAGE_KEY);
+  } catch (err) {
+    console.warn('Could not empty recycle bin', err);
   }
 }

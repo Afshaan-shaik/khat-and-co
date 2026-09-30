@@ -458,6 +458,7 @@ export const App: React.FC = () => {
           <ShelfSection
             onOpenLetter={(l) => handleOpenReader(l, { peek: false })}
             sentLettersTrigger={shelfTrigger}
+            showToast={showToast}
           />
 
           {/* The Weekly Nudge Section with Google Calendar reminder */}

@@ -293,3 +293,32 @@ export async function backupAllSiteDataToSupabase(): Promise<{
     };
   }
 }
+
+/**
+ * Deletes a letter from Supabase DB and storage bucket upon permanent truncation.
+ */
+export async function deleteLetterFromSupabase(idOrSlug: string): Promise<boolean> {
+  if (!supabase) return false;
+
+  try {
+    // 1. Delete DB row
+    const { error: dbError } = await supabase
+      .from('letters')
+      .delete()
+      .or(`slug.eq.${idOrSlug},id.eq.${idOrSlug}`);
+
+    if (dbError) {
+      console.warn('Supabase DB delete warning:', dbError);
+    }
+
+    // 2. Delete storage file if present
+    await supabase.storage
+      .from(STORAGE_BUCKET)
+      .remove([`letters/${idOrSlug}.json`]);
+
+    return true;
+  } catch (err) {
+    console.warn('deleteLetterFromSupabase error:', err);
+    return false;
+  }
+}

@@ -1,11 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { LetterData } from '../types/letter';
+import { LetterData, RecycleBinItem } from '../types/letter';
 import { renderPostageStampSvg, renderPostmarkSvg } from '../utils/stamps';
-import { isSupabaseConfigured, fetchShelfFromSupabase, backupAllSiteDataToSupabase } from '../services/supabase';
+import {
+  isSupabaseConfigured,
+  fetchShelfFromSupabase,
+  backupAllSiteDataToSupabase,
+  deleteLetterFromSupabase
+} from '../services/supabase';
+import {
+  loadShelfLetters,
+  loadRecycleBin,
+  moveToRecycleBin,
+  restoreFromRecycleBin,
+  truncateFromRecycleBin,
+  emptyRecycleBin,
+  getLetterId
+} from '../utils/storage';
+import { sfx } from '../utils/sound';
 
 interface ShelfSectionProps {
   onOpenLetter: (letter: LetterData) => void;
   sentLettersTrigger?: number; // increments when a new letter is sealed
+  showToast?: (msg: string) => void;
 }
 
 const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
@@ -84,12 +100,26 @@ const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
   ];
 };
 
-export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLettersTrigger }) => {
+export const ShelfSection: React.FC<ShelfSectionProps> = ({
+  onOpenLetter,
+  sentLettersTrigger,
+  showToast
+}) => {
   const [shelfLetters, setShelfLetters] = useState<(LetterData & { sample?: boolean })[]>([]);
   const [isSample, setIsSample] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
 
+  // Recycle bin & tabs state
+  const [viewMode, setViewMode] = useState<'shelf' | 'bin'>('shelf');
+  const [binItems, setBinItems] = useState<RecycleBinItem[]>([]);
+  const [confirmTarget, setConfirmTarget] = useState<{
+    id: string;
+    recipient?: string;
+    isAll?: boolean;
+  } | null>(null);
+
+  // Load shelf and recycle bin on mount & whenever trigger updates
   useEffect(() => {
     let cancelled = false;
 
@@ -101,6 +131,7 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLe
           if (!cancelled && remote && remote.length > 0) {
             setShelfLetters(remote);
             setIsSample(false);
+            setBinItems(loadRecycleBin());
             return;
           }
         } catch {
@@ -110,12 +141,12 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLe
 
       // 2. Fallback to localStorage
       try {
-        const stored = localStorage.getItem('khath:shelf');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (!cancelled && Array.isArray(parsed) && parsed.length > 0) {
-            setShelfLetters(parsed);
+        const stored = loadShelfLetters();
+        if (stored && stored.length > 0) {
+          if (!cancelled) {
+            setShelfLetters(stored);
             setIsSample(false);
+            setBinItems(loadRecycleBin());
             return;
           }
         }
@@ -126,6 +157,7 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLe
       if (!cancelled) {
         setShelfLetters(SAMPLES());
         setIsSample(true);
+        setBinItems(loadRecycleBin());
       }
     }
 
@@ -159,18 +191,143 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLe
     return str.split(',')[0] || str;
   };
 
+  // Delete from shelf to Recycle Bin (Soft Delete)
+  const handleDeleteToBin = (e: React.MouseEvent, letter: LetterData) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sfx.rustle();
+
+    if ((letter as any).sample) {
+      setShelfLetters((prev) => prev.filter((l) => l !== letter));
+      showToast?.('Sample letter removed.');
+      return;
+    }
+
+    moveToRecycleBin(letter);
+    const updatedShelf = loadShelfLetters();
+    setShelfLetters(updatedShelf.length > 0 ? updatedShelf : SAMPLES());
+    setIsSample(updatedShelf.length === 0);
+    setBinItems(loadRecycleBin());
+    showToast?.('Letter moved to Recycle Bin.');
+  };
+
+  // Restore letter from Recycle Bin to Shelf
+  const handleRestore = (id: string) => {
+    sfx.snap();
+    const restored = restoreFromRecycleBin(id);
+    if (restored) {
+      const updatedShelf = loadShelfLetters();
+      setShelfLetters(updatedShelf);
+      setIsSample(false);
+      setBinItems(loadRecycleBin());
+      showToast?.(`Restored letter to ${restored.recipient || 'recipient'}.`);
+    }
+  };
+
+  // Trigger confirmation modal for single truncate
+  const promptTruncate = (item: RecycleBinItem) => {
+    sfx.rustle();
+    setConfirmTarget({ id: item.id, recipient: item.letter.recipient });
+  };
+
+  // Trigger confirmation modal for emptying entire bin
+  const promptEmptyBin = () => {
+    sfx.rustle();
+    setConfirmTarget({ id: 'all', isAll: true });
+  };
+
+  // Final confirmation to truncate permanently
+  const handleTruncateConfirm = async () => {
+    if (!confirmTarget) return;
+    sfx.thump();
+
+    if (confirmTarget.isAll) {
+      emptyRecycleBin();
+      setBinItems([]);
+      showToast?.('Recycle bin emptied permanently.');
+    } else {
+      truncateFromRecycleBin(confirmTarget.id);
+      if (isSupabaseConfigured()) {
+        await deleteLetterFromSupabase(confirmTarget.id);
+      }
+      setBinItems(loadRecycleBin());
+      showToast?.('Letter permanently deleted.');
+    }
+
+    setConfirmTarget(null);
+  };
+
   return (
     <section className="section" id="shelf">
       <div className="container">
-        <div className="shelf-head rv in" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div
+          className="shelf-head rv in"
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+            gap: '16px'
+          }}
+        >
           <div>
             <h2>The shelf</h2>
             <p className="lead">
               Every letter you send stacks up here, oldest at the back. Tap one to open it again.
             </p>
+
+            {/* View Switcher Tabs: Shelf vs Recycle Bin */}
+            <div className="shelf-controls">
+              <div className="shelf-tabs" role="tablist" aria-label="Shelf navigation">
+                <button
+                  type="button"
+                  role="tab"
+                  id="shelf-tab-active"
+                  aria-selected={viewMode === 'shelf'}
+                  className={`shelf-tab-btn ${viewMode === 'shelf' ? 'active' : ''}`}
+                  onClick={() => {
+                    sfx.rustle();
+                    setViewMode('shelf');
+                  }}
+                >
+                  <span>Active Shelf</span>
+                  <span
+                    className={`shelf-tab-count ${
+                      shelfLetters.length > 0 && !isSample ? 'has-items' : ''
+                    }`}
+                  >
+                    {isSample ? 0 : shelfLetters.length}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  id="shelf-tab-bin"
+                  aria-selected={viewMode === 'bin'}
+                  className={`shelf-tab-btn ${viewMode === 'bin' ? 'active' : ''}`}
+                  onClick={() => {
+                    sfx.rustle();
+                    setViewMode('bin');
+                  }}
+                >
+                  <span>Recycle Bin</span>
+                  <span className={`shelf-tab-count ${binItems.length > 0 ? 'has-items' : ''}`}>
+                    {binItems.length}
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
+
           {isSupabaseConfigured() && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                gap: '6px'
+              }}
+            >
               <button
                 type="button"
                 className="btn ghost sm"
@@ -189,73 +346,268 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({ onOpenLetter, sentLe
           )}
         </div>
 
-        <div className="shelf in" id="shelfRow">
-          {shelfLetters.slice(-10).map((letter, idx) => {
-            const rot = idx % 2 === 0 ? -1.6 : 1.6;
+        {/* View Mode: Active Shelf */}
+        {viewMode === 'shelf' && (
+          <>
+            <div className="shelf in" id="shelfRow">
+              {shelfLetters.slice(-10).map((letter, idx) => {
+                const rot = idx % 2 === 0 ? -1.6 : 1.6;
+                const letterId = letter.id || getLetterId(letter, idx);
 
-            return (
-              <button
-                key={letter.date + '_' + idx}
-                type="button"
-                className="shelf-item"
-                style={
-                  {
-                    '--r': `${rot}deg`,
-                    '--i': idx,
-                    zIndex: idx + 1
-                  } as React.CSSProperties
-                }
-                onClick={() => onOpenLetter(letter)}
-              >
-                {/* 3D Envelope Front */}
-                <div className="env still" data-face="front">
-                  <div className="env-stage">
-                    <div className="env-flip">
-                      <div className="env-face front">
-                        <div className="ret">{letter.sender || ''}</div>
-                        <div className="addr">
-                          <small>To</small>
-                          {letter.recipient || 'You'}
+                return (
+                  <div
+                    key={(letter.id || letter.date) + '_' + idx}
+                    className="shelf-item"
+                    data-testid={`shelf-item-${idx}`}
+                    style={
+                      {
+                        '--r': `${rot}deg`,
+                        '--i': idx,
+                        zIndex: idx + 1
+                      } as React.CSSProperties
+                    }
+                  >
+                    {/* Delete button: Soft-deletes letter to Recycle Bin */}
+                    <button
+                      type="button"
+                      className="shelf-del-btn"
+                      title="Move to Recycle Bin"
+                      aria-label={`Delete letter for ${letter.recipient || 'recipient'} to recycle bin`}
+                      data-testid={`delete-letter-${letterId}`}
+                      onClick={(e) => handleDeleteToBin(e, letter)}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                    >
+                      ✕
+                    </button>
+
+                    {/* Clickable Envelope Body */}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => onOpenLetter(letter)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onOpenLetter(letter);
+                        }
+                      }}
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                    >
+                      {/* 3D Envelope Front */}
+                      <div className="env still" data-face="front">
+                        <div className="env-stage">
+                          <div className="env-flip">
+                            <div className="env-face front">
+                              <div className="ret">{letter.sender || ''}</div>
+                              <div className="addr">
+                                <small>To</small>
+                                {letter.recipient || 'You'}
+                              </div>
+                              <div
+                                className="pm"
+                                dangerouslySetInnerHTML={{
+                                  __html: renderPostmarkSvg(letter.city, Date.now())
+                                }}
+                              />
+                              <div
+                                className="stp"
+                                dangerouslySetInnerHTML={{
+                                  __html: renderPostageStampSvg(letter.stamp || 0)
+                                }}
+                              />
+                              <i className="env-ring" />
+                            </div>
+                          </div>
                         </div>
-                        <div
-                          className="pm"
-                          dangerouslySetInnerHTML={{
-                            __html: renderPostmarkSvg(letter.city, Date.now())
-                          }}
-                        />
-                        <div
-                          className="stp"
-                          dangerouslySetInnerHTML={{
-                            __html: renderPostageStampSvg(letter.stamp || 0)
-                          }}
-                        />
-                        <i className="env-ring" />
+                      </div>
+
+                      <span className="cap">
+                        <b>
+                          To {letter.recipient || 'you'}
+                          {letter.sample && <em className="tag">Sample</em>}
+                        </b>
+                        <i>
+                          {letter.unlockDate
+                            ? `Sealed until ${letter.unlockDate}`
+                            : fmtDate(letter.date)}
+                        </i>
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="hint shelf-note" id="shelfNote">
+              {isSample
+                ? 'These are sample letters. They disappear once you send your first.'
+                : ''}
+            </p>
+          </>
+        )}
+
+        {/* View Mode: Recycle Bin */}
+        {viewMode === 'bin' && (
+          <div className="recycle-bin-view" data-testid="recycle-bin-container">
+            <div className="recycle-bin-toolbar">
+              <div>
+                <span style={{ fontSize: '0.92rem', color: 'var(--muted)' }}>
+                  {binItems.length === 0
+                    ? 'Your recycle bin is clean.'
+                    : `${binItems.length} deleted letter${binItems.length === 1 ? '' : 's'} stored.`}
+                </span>
+              </div>
+              {binItems.length > 0 && (
+                <button
+                  type="button"
+                  className="btn xs danger-outline"
+                  data-testid="empty-bin-btn"
+                  onClick={promptEmptyBin}
+                >
+                  Empty Bin Permanently
+                </button>
+              )}
+            </div>
+
+            {binItems.length === 0 ? (
+              <div className="recycle-bin-empty" data-testid="recycle-bin-empty">
+                <div className="recycle-bin-empty-seal">✉️</div>
+                <h3>The bin is empty</h3>
+                <p>
+                  Letters you delete from your active shelf will rest here before being permanently
+                  truncated.
+                </p>
+                <button
+                  type="button"
+                  className="btn sm ghost"
+                  onClick={() => setViewMode('shelf')}
+                >
+                  Return to shelf
+                </button>
+              </div>
+            ) : (
+              <div className="recycle-bin-grid">
+                {binItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="recycle-bin-card"
+                    data-testid={`bin-card-${item.id}`}
+                  >
+                    <div>
+                      <div className="recycle-card-header">
+                        <span className="recycle-card-to">
+                          To: {item.letter.recipient || 'Someone'}
+                        </span>
+                        <span className="recycle-card-date">
+                          {fmtDate(item.letter.date)}
+                        </span>
+                      </div>
+                      <p className="recycle-card-snippet">
+                        {item.letter.body || 'Empty letter content.'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <div className="recycle-card-meta">
+                        <span>
+                          Deleted {new Date(item.deletedAt).toLocaleDateString()}
+                        </span>
+                        <span>From: {item.letter.sender || 'Anonymous'}</span>
+                      </div>
+                      <div className="recycle-card-actions">
+                        <button
+                          type="button"
+                          className="btn xs primary-outline"
+                          data-testid={`restore-btn-${item.id}`}
+                          onClick={() => handleRestore(item.id)}
+                          title="Restore this letter back to your shelf"
+                        >
+                          ↩ Restore
+                        </button>
+                        <button
+                          type="button"
+                          className="btn xs ghost"
+                          onClick={() => onOpenLetter(item.letter)}
+                          title="Preview this letter"
+                        >
+                          Preview
+                        </button>
+                        <button
+                          type="button"
+                          className="btn xs danger-text"
+                          data-testid={`truncate-btn-${item.id}`}
+                          onClick={() => promptTruncate(item)}
+                          title="Delete permanently"
+                        >
+                          Truncate
+                        </button>
                       </div>
                     </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-                <span className="cap">
-                  <b>
-                    To {letter.recipient || 'you'}
-                    {letter.sample && <em className="tag">Sample</em>}
-                  </b>
-                  <i>
-                    {letter.unlockDate
-                      ? `Sealed until ${letter.unlockDate}`
-                      : fmtDate(letter.date)}
-                  </i>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        <p className="hint shelf-note" id="shelfNote">
-          {isSample
-            ? 'These are sample letters. They disappear once you send your first.'
-            : ''}
-        </p>
+        {/* Vintage Stationery Confirmation Modal for Truncating */}
+        {confirmTarget && (
+          <div
+            className="stationery-modal-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-modal-title"
+            data-testid="truncate-modal"
+          >
+            <div className="stationery-modal-box">
+              <div style={{ fontSize: '32px', marginBottom: '12px' }}>⚠️</div>
+              <h3
+                id="confirm-modal-title"
+                style={{
+                  fontFamily: "'Bodoni Moda', Georgia, serif",
+                  fontSize: '1.35rem',
+                  marginBottom: '10px'
+                }}
+              >
+                {confirmTarget.isAll
+                  ? 'Empty Entire Recycle Bin?'
+                  : 'Permanently Truncate Letter?'}
+              </h3>
+              <p
+                style={{
+                  color: 'var(--muted)',
+                  fontSize: '0.9rem',
+                  lineHeight: 1.5,
+                  marginBottom: '24px'
+                }}
+              >
+                {confirmTarget.isAll
+                  ? 'This action cannot be undone. All letters in the bin will be permanently erased from your storage.'
+                  : `This will permanently truncate the letter for ${
+                      confirmTarget.recipient || 'the recipient'
+                    }. Once erased, it cannot be recovered.`}
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  className="btn ghost sm"
+                  onClick={() => setConfirmTarget(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn danger sm"
+                  data-testid="confirm-truncate-btn"
+                  onClick={handleTruncateConfirm}
+                >
+                  {confirmTarget.isAll ? 'Yes, Empty All' : 'Yes, Truncate Permanently'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );
