@@ -141,6 +141,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({ onComplete, onTh
   const handleOpenEnvelope = useCallback(() => {
     if (openedRef.current) return;
     openedRef.current = true;
+    setEnvIn(true);
     setEnvOpen(true);
 
     // Progress bar 12s linear transition

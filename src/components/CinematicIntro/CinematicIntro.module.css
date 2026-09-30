@@ -303,6 +303,7 @@
 /* When Envelope Opens */
 .env.open {
   transform: none;
+  opacity: 1;
 }
 
 .env.open .flap {
