@@ -370,7 +370,7 @@ export const CinematicIntro: React.FC<CinematicIntroProps> = ({ onComplete, onTh
             }}
             aria-label="Break the seal"
           >
-            K
+            ∞
           </button>
 
           {/* "Tap the seal to open" prompt */}

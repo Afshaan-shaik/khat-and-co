@@ -18,10 +18,10 @@ test.describe('Khath & Co. Cinematic Intro', () => {
     // Verify brand lockup
     await expect(introDialog.locator('div[class*="brand"]')).toBeVisible();
 
-    // Verify wax seal button with initial 'K' is visible and beat animation is ready
+    // Verify wax seal button with infinity symbol is visible and beat animation is ready
     const seal = introDialog.getByRole('button', { name: 'Break the seal' });
     await expect(seal).toBeVisible();
-    await expect(seal).toHaveText('K');
+    await expect(seal).toHaveText('∞');
 
     // Verify body scroll is locked
     const bodyOverflow = await page.evaluate(() => document.body.style.overflow);
