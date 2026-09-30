@@ -24,6 +24,8 @@ import { NudgeSection } from './components/NudgeSection';
 import { SoundCursor } from './components/SoundCursor';
 import { ReaderModal } from './components/ReaderModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { CinematicIntro } from './components/CinematicIntro';
+import { SHOW_INTRO_ON_LETTER_LINKS } from './constants/introConfig';
 
 // Modal Overlays & Existing Feature Modules
 import { Studio } from './components/Studio';
@@ -31,6 +33,14 @@ import { YourDesk } from './components/YourDesk';
 import { PromptModal } from './components/PromptModal';
 import { TimeCapsuleManager } from './components/TimeCapsuleManager';
 import { SealedUntilFuture } from './components/SealedUntilFuture';
+
+function getSessionOrStoredTheme(): 'dark' | 'light' {
+  try {
+    const session = sessionStorage.getItem('khath-theme');
+    if (session === 'dark' || session === 'light') return session;
+  } catch {}
+  return loadThemePreference();
+}
 
 // Expose encoder on window for automated test evaluation
 if (typeof window !== 'undefined') {
@@ -77,8 +87,16 @@ function getInitialRecipientLetter(): LetterData | null {
 }
 
 export const App: React.FC = () => {
-  // Theme state
-  const [theme, setTheme] = useState<'dark' | 'light'>(loadThemePreference);
+  // Theme state: opens in night mode by default on a new session; preserved for current session
+  const [theme, setTheme] = useState<'dark' | 'light'>(getSessionOrStoredTheme);
+
+  // Cinematic Intro state: plays on every page load/refresh
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    if (!SHOW_INTRO_ON_LETTER_LINKS && hasIncomingShare()) {
+      return false;
+    }
+    return true;
+  });
 
   // Active Draft Letter state for author desk
   const [letter, setLetter] = useState<LetterData>(loadSavedDraft);
@@ -111,10 +129,13 @@ export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const toastTimeoutRef = useRef<number | null>(null);
 
-  // Apply theme to document
+  // Apply theme to document and persist
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     saveThemePreference(theme);
+    try {
+      sessionStorage.setItem('khath-theme', theme);
+    } catch {}
   }, [theme]);
 
   const showToast = useCallback((msg: string) => {
@@ -373,6 +394,12 @@ export const App: React.FC = () => {
     return (
       <ErrorBoundary>
         <div className="app-shell recipient-mode">
+          {showIntro && (
+            <CinematicIntro
+              onComplete={() => setShowIntro(false)}
+              onThemeChange={setTheme}
+            />
+          )}
           <ReaderModal
             isOpen={true}
             letter={recipientLetter}
@@ -395,6 +422,12 @@ export const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <div className="app-shell">
+        {showIntro && (
+          <CinematicIntro
+            onComplete={() => setShowIntro(false)}
+            onThemeChange={setTheme}
+          />
+        )}
       <a className="skip" href="#studio">
         Skip to the letter studio
       </a>
