@@ -27,6 +27,7 @@ interface ShelfSectionProps {
 const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
   return [
     {
+      id: 'sample_meera',
       sample: true,
       recipient: 'Meera',
       sender: 'Arjun',
@@ -51,6 +52,7 @@ const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
       ]
     },
     {
+      id: 'sample_nani',
       sample: true,
       recipient: 'नानी',
       sender: 'सिया',
@@ -74,6 +76,7 @@ const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
       ]
     },
     {
+      id: 'sample_sam',
       sample: true,
       recipient: 'Sam',
       sender: 'Rhea',
@@ -203,13 +206,14 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
   };
 
   // Delete from shelf to Recycle Bin (Soft Delete)
-  const handleDeleteToBin = (e: React.MouseEvent, letter: LetterData) => {
+  const handleDeleteToBin = (e: React.MouseEvent, letter: LetterData, explicitId?: string) => {
     e.preventDefault();
     e.stopPropagation();
     sfx.rustle();
 
-    const targetId = letter.id || getLetterId(letter);
-    moveToRecycleBin(letter);
+    const targetId = explicitId || letter.id || getLetterId(letter);
+    const letterWithId = { ...letter, id: targetId };
+    moveToRecycleBin(letterWithId);
 
     setShelfLetters((prev) =>
       prev.filter((l) => {
@@ -385,7 +389,7 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
                       title="Move to Recycle Bin"
                       aria-label={`Delete letter for ${letter.recipient || 'recipient'} to recycle bin`}
                       data-testid={`delete-letter-${letterId}`}
-                      onClick={(e) => handleDeleteToBin(e, letter)}
+                      onClick={(e) => handleDeleteToBin(e, letter, letterId)}
                       onPointerDown={(e) => e.stopPropagation()}
                       onTouchStart={(e) => e.stopPropagation()}
                     >

@@ -134,9 +134,9 @@ export function saveThemePreference(theme: 'dark' | 'light'): void {
 
 export function getLetterId(letter: LetterData, fallbackIndex?: number): string {
   if (letter.id) return letter.id;
-  const base = `${letter.recipient || 'recipient'}_${letter.date || 'date'}_${letter.body ? letter.body.slice(0, 15) : ''}`;
+  const base = `${letter.recipient || 'recipient'}_${letter.date || 'date'}_${letter.body ? letter.body.slice(0, 25) : ''}`;
   const clean = base.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
-  return fallbackIndex !== undefined ? `${clean}_${fallbackIndex}` : `${clean}_${Date.now()}`;
+  return fallbackIndex !== undefined ? `${clean}_${fallbackIndex}` : clean;
 }
 
 export function loadShelfLetters(): LetterData[] {
