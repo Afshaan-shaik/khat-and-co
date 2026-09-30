@@ -300,6 +300,10 @@
 }
 
 /* When Envelope Opens */
+.env.open {
+  transform: translateY(48px);
+}
+
 .env.open .flap {
   transform: rotateX(180deg);
   z-index: 1;
@@ -312,7 +316,7 @@
 }
 
 .env.open .letter {
-  transform: translateY(-58%);
+  transform: translateY(-40%);
 }
 
 /* ── Wax Seal Button ── */
@@ -542,6 +546,12 @@
   .letterTxt {
     font-size: 19px / 23px;
     min-height: 90px;
+  }
+  .env.open {
+    transform: translateY(32px);
+  }
+  .env.open .letter {
+    transform: translateY(-38%);
   }
 }
 

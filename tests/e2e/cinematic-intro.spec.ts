@@ -84,6 +84,11 @@ test.describe('Khath & Co. Cinematic Intro', () => {
     const toText = introDialog.locator('div[class*="letterTo"]');
     await expect(toText).toContainText('Dear you,');
 
+    // Verify "Dear you," is completely visible within viewport
+    const toBox = await toText.boundingBox();
+    expect(toBox).not.toBeNull();
+    expect(toBox!.y).toBeGreaterThanOrEqual(40);
+
     const bodyText = introDialog.locator('div[class*="letterTxt"]');
     await expect(bodyText).toContainText('I read your last note');
 
