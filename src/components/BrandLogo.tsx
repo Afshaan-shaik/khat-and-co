@@ -19,7 +19,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '14px',
         textDecoration: 'none',
         ...style
       }}
@@ -31,7 +30,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         fill="none"
         className="brand-envelope-mark"
         style={{
-          height: '66px',
           width: 'auto',
           flexShrink: 0,
           display: 'block'

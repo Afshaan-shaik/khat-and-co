@@ -364,94 +364,96 @@ export const ShelfSection: React.FC<ShelfSectionProps> = ({
         {/* View Mode: Active Shelf */}
         {viewMode === 'shelf' && (
           <>
-            <div className="shelf in" id="shelfRow">
-              {shelfLetters.slice(-10).map((letter, idx) => {
-                const rot = idx % 2 === 0 ? -1.6 : 1.6;
-                const letterId = letter.id || getLetterId(letter, idx);
+            <div className="shelf-wrap">
+              <div className="shelf in" id="shelfRow">
+                {shelfLetters.slice(-10).map((letter, idx) => {
+                  const rot = idx % 2 === 0 ? -1.6 : 1.6;
+                  const letterId = letter.id || getLetterId(letter, idx);
 
-                return (
-                  <div
-                    key={(letter.id || letter.date) + '_' + idx}
-                    className="shelf-item"
-                    data-testid={`shelf-item-${idx}`}
-                    style={
-                      {
-                        '--r': `${rot}deg`,
-                        '--i': idx,
-                        zIndex: idx + 1
-                      } as React.CSSProperties
-                    }
-                  >
-                    {/* Delete button: Soft-deletes letter to Recycle Bin */}
-                    <button
-                      type="button"
-                      className="shelf-del-btn"
-                      title="Move to Recycle Bin"
-                      aria-label={`Delete letter for ${letter.recipient || 'recipient'} to recycle bin`}
-                      data-testid={`delete-letter-${letterId}`}
-                      onClick={(e) => handleDeleteToBin(e, letter, letterId)}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                    >
-                      ✕
-                    </button>
-
-                    {/* Clickable Envelope Body */}
+                  return (
                     <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onOpenLetter(letter)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onOpenLetter(letter);
-                        }
-                      }}
-                      style={{ cursor: 'pointer', outline: 'none' }}
+                      key={(letter.id || letter.date) + '_' + idx}
+                      className="shelf-item"
+                      data-testid={`shelf-item-${idx}`}
+                      style={
+                        {
+                          '--r': `${rot}deg`,
+                          '--i': idx,
+                          zIndex: idx + 1
+                        } as React.CSSProperties
+                      }
                     >
-                      {/* 3D Envelope Front */}
-                      <div className="env still" data-face="front">
-                        <div className="env-stage">
-                          <div className="env-flip">
-                            <div className="env-face front">
-                              <div className="ret">{letter.sender || ''}</div>
-                              <div className="addr">
-                                <small>To</small>
-                                {letter.recipient || 'You'}
+                      {/* Delete button: Soft-deletes letter to Recycle Bin */}
+                      <button
+                        type="button"
+                        className="shelf-del-btn"
+                        title="Move to Recycle Bin"
+                        aria-label={`Delete letter for ${letter.recipient || 'recipient'} to recycle bin`}
+                        data-testid={`delete-letter-${letterId}`}
+                        onClick={(e) => handleDeleteToBin(e, letter, letterId)}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
+                      >
+                        ✕
+                      </button>
+
+                      {/* Clickable Envelope Body */}
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onOpenLetter(letter)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onOpenLetter(letter);
+                          }
+                        }}
+                        style={{ cursor: 'pointer', outline: 'none' }}
+                      >
+                        {/* 3D Envelope Front */}
+                        <div className="env still" data-face="front">
+                          <div className="env-stage">
+                            <div className="env-flip">
+                              <div className="env-face front">
+                                <div className="ret">{letter.sender || ''}</div>
+                                <div className="addr">
+                                  <small>To</small>
+                                  {letter.recipient || 'You'}
+                                </div>
+                                <div
+                                  className="pm"
+                                  dangerouslySetInnerHTML={{
+                                    __html: renderPostmarkSvg(letter.city, Date.now())
+                                  }}
+                                />
+                                <div
+                                  className="stp"
+                                  dangerouslySetInnerHTML={{
+                                    __html: renderPostageStampSvg(letter.stamp || 0)
+                                  }}
+                                />
+                                <i className="env-ring" />
                               </div>
-                              <div
-                                className="pm"
-                                dangerouslySetInnerHTML={{
-                                  __html: renderPostmarkSvg(letter.city, Date.now())
-                                }}
-                              />
-                              <div
-                                className="stp"
-                                dangerouslySetInnerHTML={{
-                                  __html: renderPostageStampSvg(letter.stamp || 0)
-                                }}
-                              />
-                              <i className="env-ring" />
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                      <span className="cap">
-                        <b>
-                          To {letter.recipient || 'you'}
-                          {letter.sample && <em className="tag">Sample</em>}
-                        </b>
-                        <i>
-                          {letter.unlockDate
-                            ? `Sealed until ${letter.unlockDate}`
-                            : fmtDate(letter.date)}
-                        </i>
-                      </span>
+                        <span className="cap">
+                          <b>
+                            To {letter.recipient || 'you'}
+                            {letter.sample && <em className="tag">Sample</em>}
+                          </b>
+                          <i>
+                            {letter.unlockDate
+                              ? `Sealed until ${letter.unlockDate}`
+                              : fmtDate(letter.date)}
+                          </i>
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             <p className="hint shelf-note" id="shelfNote">
