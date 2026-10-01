@@ -32,7 +32,6 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
 }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [activeTool, setActiveTool] = useState<ToolType>('text');
-  const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
   const [selectedStickerPack, setSelectedStickerPack] = useState<'Botanical' | 'Hearts' | 'Paper' | 'Wax Seals' | 'Vintage' | 'Stamps'>('Botanical');
   const [selectedStickerIndex, setSelectedStickerIndex] = useState<number>(-1);
   const [isPressingSeal, setIsPressingSeal] = useState(false);
@@ -362,10 +361,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   <button
                     className={`tool ${activeTool === 'text' ? 'on' : ''}`}
                     type="button"
-                    onClick={() => {
-                      setActiveTool('text');
-                      setIsMobilePanelOpen(true);
-                    }}
+                    onClick={() => setActiveTool('text')}
                   >
                     <svg viewBox="0 0 24 24">
                       <path d="M5 19 11 5l6 14M7.5 14h7" />
@@ -375,10 +371,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   <button
                     className={`tool ${activeTool === 'stickers' ? 'on' : ''}`}
                     type="button"
-                    onClick={() => {
-                      setActiveTool('stickers');
-                      setIsMobilePanelOpen(true);
-                    }}
+                    onClick={() => setActiveTool('stickers')}
                   >
                     <svg viewBox="0 0 24 24">
                       <path d="M5 5h10l4 4v10H5z" />
@@ -389,10 +382,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   <button
                     className={`tool ${activeTool === 'paper' ? 'on' : ''}`}
                     type="button"
-                    onClick={() => {
-                      setActiveTool('paper');
-                      setIsMobilePanelOpen(true);
-                    }}
+                    onClick={() => setActiveTool('paper')}
                   >
                     <svg viewBox="0 0 24 24">
                       <rect x="5" y="3" width="14" height="18" rx="1.5" />
@@ -403,10 +393,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   <button
                     className={`tool ${activeTool === 'seal' ? 'on' : ''}`}
                     type="button"
-                    onClick={() => {
-                      setActiveTool('seal');
-                      setIsMobilePanelOpen(true);
-                    }}
+                    onClick={() => setActiveTool('seal')}
                   >
                     <svg viewBox="0 0 24 24">
                       <circle cx="12" cy="12" r="8" />
@@ -417,10 +404,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   <button
                     className={`tool ${activeTool === 'more' ? 'on' : ''}`}
                     type="button"
-                    onClick={() => {
-                      setActiveTool('more');
-                      setIsMobilePanelOpen(true);
-                    }}
+                    onClick={() => setActiveTool('more')}
                   >
                     <svg viewBox="0 0 24 24">
                       <circle cx="6" cy="12" r="1.2" />
@@ -554,27 +538,12 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
 
               {/* Right Customization Panel */}
               <div className="col-12 col-lg-5">
-                {isMobilePanelOpen && (
-                  <div
-                    className="panel-backdrop"
-                    onClick={() => setIsMobilePanelOpen(false)}
-                    aria-hidden="true"
-                  />
-                )}
-                <aside className={`panel ${isMobilePanelOpen ? 'open' : ''}`} id="panel" aria-label="Tool options">
+                <aside className="panel" id="panel" aria-label="Tool options">
                   {/* TEXT PANEL */}
                   {activeTool === 'text' && (
                     <>
                       <div className="panel-head">
                         <h3>Text</h3>
-                        <button
-                          type="button"
-                          className="panel-x"
-                          onClick={() => setIsMobilePanelOpen(false)}
-                          aria-label="Close options"
-                        >
-                          ✕
-                        </button>
                       </div>
                       <div className="lbl">Language</div>
                       <div className="seg">
@@ -649,14 +618,6 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                     <>
                       <div className="panel-head">
                         <h3>Stickers</h3>
-                        <button
-                          type="button"
-                          className="panel-x"
-                          onClick={() => setIsMobilePanelOpen(false)}
-                          aria-label="Close options"
-                        >
-                          ✕
-                        </button>
                       </div>
                       <div className="seg">
                         {(['Botanical', 'Hearts', 'Paper', 'Wax Seals', 'Vintage', 'Stamps'] as const).map((pack) => (
@@ -695,14 +656,6 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                     <>
                       <div className="panel-head">
                         <h3>Paper</h3>
-                        <button
-                          type="button"
-                          className="panel-x"
-                          onClick={() => setIsMobilePanelOpen(false)}
-                          aria-label="Close options"
-                        >
-                          ✕
-                        </button>
                       </div>
                       <div className="strip">
                         {PAPER_TEMPLATES.map((tmpl) => (
@@ -746,14 +699,6 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                     <>
                       <div className="panel-head">
                         <h3>Wax seal</h3>
-                        <button
-                          type="button"
-                          className="panel-x"
-                          onClick={() => setIsMobilePanelOpen(false)}
-                          aria-label="Close options"
-                        >
-                          ✕
-                        </button>
                       </div>
                       <div
                         className="seal-prev"
@@ -836,14 +781,6 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                     <>
                       <div className="panel-head">
                         <h3>More</h3>
-                        <button
-                          type="button"
-                          className="panel-x"
-                          onClick={() => setIsMobilePanelOpen(false)}
-                          aria-label="Close options"
-                        >
-                          ✕
-                        </button>
                       </div>
                       <div className="lbl">P.S.</div>
                       <textarea

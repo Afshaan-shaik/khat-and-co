@@ -1746,22 +1746,15 @@ textarea.field {
   color: #F09AA6;
 }
 
-.panel-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 17, 30, 0.5);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 59;
-  animation: fadeIn 0.25s ease both;
-}
-
 .panel {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 22px;
   box-shadow: var(--shadow);
   padding: 24px;
+  width: 100%;
+  max-width: 560px;
+  margin-inline: auto;
 }
 
 .panel-head {
@@ -1771,56 +1764,12 @@ textarea.field {
   margin-bottom: 18px;
 }
 
-.panel-x {
-  display: none;
-  border: 0;
-  background: var(--chip);
-  color: var(--text);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  font-size: 20px;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.panel-x:hover {
-  background: var(--line-strong);
-}
-
 @media(min-width: 992px) {
   .panel {
     position: sticky;
     top: 96px;
-  }
-}
-
-@media(max-width: 991px) {
-  .panel {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 60;
-    border-radius: 22px 22px 0 0;
-    max-height: 68vh;
-    overflow-y: auto;
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    transform: translateY(105%);
-    transition: transform .35s cubic-bezier(.2, .8, .2, 1), visibility .35s;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.35);
-    visibility: hidden;
-    pointer-events: none;
-  }
-  .panel.open {
-    transform: translateY(0);
-    visibility: visible;
-    pointer-events: auto;
-  }
-  .panel-x {
-    display: inline-flex;
+    max-width: 100%;
+    margin-inline: 0;
   }
 }
 
