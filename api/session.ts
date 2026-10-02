@@ -1,4 +1,4 @@
-import { handleApiRequest } from './_handler';
+import { handleApiRequest } from './_handler.ts';
 
 export default async function handler(req: any, res: any) {
   try {
