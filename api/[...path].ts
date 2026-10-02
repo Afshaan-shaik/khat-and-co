@@ -1,4 +1,4 @@
-import { handleApiRequest } from '../src/server/apiHandler';
+import { handleApiRequest } from './_handler';
 
 export default async function handler(req: any, res: any) {
   try {
