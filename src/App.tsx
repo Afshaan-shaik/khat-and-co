@@ -33,6 +33,10 @@ import { YourDesk } from './components/YourDesk';
 import { PromptModal } from './components/PromptModal';
 import { TimeCapsuleManager } from './components/TimeCapsuleManager';
 import { SealedUntilFuture } from './components/SealedUntilFuture';
+import { AtelierDrawer } from './components/AtelierDrawer';
+import { MemoryFolio } from './components/MemoryFolio';
+import { PhotoViewer } from './components/PhotoViewer';
+import { MemoryItem } from './types/letter';
 
 function getSessionOrStoredTheme(): 'dark' | 'light' {
   try {
@@ -124,6 +128,13 @@ export const App: React.FC = () => {
   const [isSealedUntilFutureOpen, setIsSealedUntilFutureOpen] = useState(false);
   const [isYourDeskOpen, setIsYourDeskOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isAtelierOpen, setIsAtelierOpen] = useState(false);
+  const [isMemoryFolioOpen, setIsMemoryFolioOpen] = useState(false);
+  const [photoViewerState, setPhotoViewerState] = useState<{
+    isOpen: boolean;
+    items: MemoryItem[];
+    initialIndex: number;
+  }>({ isOpen: false, items: [], initialIndex: 0 });
 
   // Toast notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -437,6 +448,7 @@ export const App: React.FC = () => {
         theme={theme}
         onToggleTheme={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
         onOpenStudio={() => setIsStudioOpen(true)}
+        onOpenAtelier={() => setIsAtelierOpen(true)}
       />
 
       {/* Main Workspace Layout */}
@@ -452,6 +464,11 @@ export const App: React.FC = () => {
             onOpenReader={handleOpenReader}
             onLetterSealed={() => setShelfTrigger((prev) => prev + 1)}
             showToast={showToast}
+            onOpenAtelier={() => setIsAtelierOpen(true)}
+            onOpenMemoryFolio={() => setIsMemoryFolioOpen(true)}
+            onOpenPhotoViewer={(items, idx) =>
+              setPhotoViewerState({ isOpen: true, items, initialIndex: idx })
+            }
           />
 
           {/* The Shelf Section with fanned-out envelope stack */}
@@ -557,6 +574,52 @@ export const App: React.FC = () => {
       <TimeCapsuleManager
         isOpen={isTimeCapsuleOpen}
         onClose={() => setIsTimeCapsuleOpen(false)}
+      />
+
+      {/* The Letter Atelier Drawer */}
+      <AtelierDrawer
+        isOpen={isAtelierOpen}
+        onClose={() => setIsAtelierOpen(false)}
+        onOpenMemoryFolio={() => {
+          setIsAtelierOpen(false);
+          setIsMemoryFolioOpen(true);
+        }}
+        onSelectFeature={(feature) => {
+          if (feature === 'memoryFolio') {
+            setIsAtelierOpen(false);
+            setIsMemoryFolioOpen(true);
+          } else if (feature === 'paper' || feature === 'postmark' || feature === 'secretFold') {
+            const studioEl = document.getElementById('studio');
+            if (studioEl) studioEl.scrollIntoView({ behavior: 'smooth' });
+          } else if (feature === 'soundscape') {
+            showToast('♪ Atmospheric slow mail soundscape active.');
+          }
+        }}
+      />
+
+      {/* Memory Folio Modal */}
+      <MemoryFolio
+        isOpen={isMemoryFolioOpen}
+        onClose={() => setIsMemoryFolioOpen(false)}
+        folio={letter.memoryFolio}
+        onUpdateFolio={(updated) => handleUpdateLetter({ memoryFolio: updated })}
+        onViewPhoto={(idx) =>
+          setPhotoViewerState({
+            isOpen: true,
+            items: letter.memoryFolio?.items || [],
+            initialIndex: idx
+          })
+        }
+        showToast={showToast}
+      />
+
+      {/* Fullscreen Photo Viewer */}
+      <PhotoViewer
+        isOpen={photoViewerState.isOpen}
+        onClose={() => setPhotoViewerState((prev) => ({ ...prev, isOpen: false }))}
+        items={photoViewerState.items}
+        initialIndex={photoViewerState.initialIndex}
+        theme={theme}
       />
 
       {/* Floating Toast Notification */}

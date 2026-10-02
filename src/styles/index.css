@@ -3062,6 +3062,1159 @@ footer .container,
   outline-color: #E3B95B;
 }
 
+/* ==========================================================================
+   THE LETTER ATELIER & MEMORY FOLIO STYLES
+   Stationery Keepsake · 4K Preservation · Responsive Editorial Display
+   ========================================================================== */
+
+/* ---------- Atelier Drawer ---------- */
+.atelier-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  background: rgba(19, 22, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeInAtelier 0.25s ease-out;
+}
+
+@keyframes fadeInAtelier {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.atelier-drawer {
+  background: var(--surface);
+  color: var(--text);
+  width: 100%;
+  max-width: 440px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.25);
+  overflow-y: auto;
+  border-left: 1px solid var(--line-strong);
+  animation: slideInAtelier 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInAtelier {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.atelier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 28px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.atelier-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cta);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.atelier-title {
+  font-family: 'Cormorant Garamond', Garamond, Georgia, serif;
+  font-size: 1.85rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.atelier-subtitle {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.atelier-close-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.atelier-close-btn:hover {
+  background: var(--chip);
+  border-color: var(--line-strong);
+}
+
+.atelier-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.atelier-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.atelier-card:hover {
+  background: var(--surface);
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.atelier-card-static {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.atelier-card-static:hover {
+  transform: none;
+  background: var(--chip);
+  box-shadow: none;
+}
+
+.atelier-card-icon {
+  font-size: 1.25rem;
+  color: var(--cta);
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.featured-icon {
+  color: var(--focus, #E3B95B);
+}
+
+.atelier-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.atelier-card-title {
+  font-family: 'Cormorant Garamond', Garamond, Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.atelier-card-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.atelier-card-arrow {
+  color: var(--muted);
+  font-size: 1.1rem;
+  transition: transform 0.2s ease;
+}
+
+.atelier-card:hover .atelier-card-arrow {
+  transform: translateX(4px);
+  color: var(--text);
+}
+
+.atelier-card-featured {
+  border-color: var(--focus, #E3B95B);
+  background: rgba(227, 185, 91, 0.08);
+}
+
+.atelier-pill {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--cta);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.atelier-badge {
+  font-size: 0.72rem;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.atelier-footer {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.atelier-footnote {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0;
+}
+
+/* ---------- Memory Folio Modal (Stationery Keepsake) ---------- */
+.folio-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  background: rgba(19, 22, 42, 0.75);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeInAtelier 0.22s ease-out;
+}
+
+.folio-modal-container {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  max-width: 840px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  padding: 32px 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: scaleInFolio 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleInFolio {
+  from {
+    transform: scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.folio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 18px;
+}
+
+.folio-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cta);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.folio-heading {
+  font-family: 'Cormorant Garamond', Garamond, Georgia, serif;
+  font-size: 2rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.folio-microcopy {
+  font-family: 'Caveat', cursive, serif;
+  font-size: 1.25rem;
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+.folio-close-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 1.5rem;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.folio-close-btn:hover {
+  background: var(--chip);
+  border-color: var(--line-strong);
+}
+
+/* Privacy Card */
+.folio-privacy-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.folio-privacy-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.folio-privacy-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.folio-privacy-dot.private {
+  background: #E2C170;
+  box-shadow: 0 0 8px rgba(226, 193, 112, 0.6);
+}
+
+.folio-privacy-dot.shared {
+  background: #4ADE80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+}
+
+.folio-privacy-label {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.folio-privacy-explainer {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.folio-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.folio-toggle-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.folio-toggle-slider {
+  width: 44px;
+  height: 24px;
+  background: var(--line-strong);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s ease;
+}
+
+.folio-toggle-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.folio-toggle-input:checked + .folio-toggle-slider {
+  background: var(--cta);
+}
+
+.folio-toggle-input:checked + .folio-toggle-slider::after {
+  transform: translateX(20px);
+}
+
+.folio-toggle-text {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Counter Row */
+.folio-counter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.folio-fidelity-badge {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--cta);
+  border: 1px solid var(--line);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--chip);
+}
+
+/* Gallery Grid */
+.folio-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.folio-photo-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.folio-photo-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+
+.folio-thumb-wrap {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  background: #111;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.folio-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+.folio-thumb-wrap:hover .folio-thumb-img {
+  transform: scale(1.04);
+}
+
+.folio-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.folio-thumb-wrap:hover .folio-thumb-overlay {
+  opacity: 1;
+}
+
+.folio-view-icon {
+  color: #fff;
+  font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 4px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+}
+
+.folio-4k-chip {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.7);
+  color: #FAD889;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  border: 1px solid rgba(250, 216, 137, 0.4);
+}
+
+.folio-card-body {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.folio-meta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.folio-photo-num {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.folio-remove-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.75rem;
+  color: var(--cta);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  transition: opacity 0.2s ease;
+}
+
+.folio-remove-btn:hover {
+  opacity: 0.8;
+}
+
+.folio-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.folio-input-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.folio-text-input {
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--text);
+  font-size: 0.85rem;
+  transition: border-color 0.2s ease;
+  width: 100%;
+}
+
+.folio-text-input:focus {
+  outline: none;
+  border-color: var(--cta);
+  background: var(--surface);
+}
+
+.folio-text-input.font-handwriting {
+  font-family: 'Caveat', cursive, serif;
+  font-size: 1.05rem;
+}
+
+.folio-focal-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.folio-focal-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.folio-focal-pill {
+  flex: 1;
+  padding: 3px 0;
+  font-size: 0.7rem;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.folio-focal-pill:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.folio-focal-pill.active {
+  background: var(--cta);
+  color: #fff;
+  border-color: var(--cta);
+}
+
+.folio-specs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+/* Dropzone */
+.folio-dropzone {
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  cursor: pointer;
+  padding: 24px;
+  text-align: center;
+  transition: all 0.22s ease;
+  background: var(--chip);
+}
+
+.folio-dropzone:hover,
+.folio-dropzone.dragging {
+  background: var(--surface);
+  border-color: var(--cta);
+  transform: translateY(-2px);
+}
+
+.folio-dropzone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.folio-dropzone-icon {
+  font-size: 2rem;
+  color: var(--cta);
+}
+
+.folio-dropzone-title {
+  font-family: 'Cormorant Garamond', Garamond, Georgia, serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 0;
+  color: var(--text);
+}
+
+.folio-dropzone-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+  max-width: 200px;
+}
+
+.folio-dropzone-types {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cta);
+  margin-top: 6px;
+}
+
+/* Uploading State Card */
+.folio-uploading-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--chip);
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+}
+
+.folio-spinner {
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--line);
+  border-top-color: var(--cta);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.folio-upload-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 220px;
+}
+
+.folio-upload-text {
+  font-size: 0.82rem;
+  color: var(--text);
+  text-align: center;
+}
+
+.folio-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.folio-progress-fill {
+  height: 100%;
+  background: var(--cta);
+  transition: width 0.2s ease;
+}
+
+.folio-upload-pct {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.folio-error-banner {
+  background: rgba(210, 56, 47, 0.1);
+  border: 1px solid var(--air-red);
+  color: var(--air-red);
+  padding: 10px 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.folio-error-close {
+  background: transparent;
+  border: none;
+  color: var(--air-red);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.folio-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.folio-footer-note {
+  font-size: 0.76rem;
+  color: var(--muted);
+  max-width: 520px;
+  margin: 0;
+}
+
+/* ---------- Fullscreen Photo Viewer (Part 14) ---------- */
+.photo-viewer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1070;
+  display: flex;
+  flex-direction: column;
+  animation: fadeInAtelier 0.2s ease-out;
+  touch-action: none;
+}
+
+.photo-viewer-backdrop.theme-dark {
+  background: rgba(8, 10, 20, 0.96);
+  color: #EFE7D6;
+}
+
+.photo-viewer-backdrop.theme-light {
+  background: rgba(245, 240, 230, 0.97);
+  color: #1F2340;
+}
+
+.viewer-top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  z-index: 2;
+}
+
+.viewer-counter {
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.viewer-4k-badge {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #E2C170;
+  border: 1px solid rgba(226, 193, 112, 0.4);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(226, 193, 112, 0.1);
+}
+
+.viewer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.viewer-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: inherit;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+}
+
+.photo-viewer-backdrop.theme-light .viewer-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.viewer-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+
+.viewer-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.viewer-close-btn {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.viewer-zoom-text {
+  font-size: 0.8rem;
+  min-width: 44px;
+  text-align: center;
+  opacity: 0.8;
+}
+
+.viewer-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.viewer-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.15s ease-out;
+  user-select: none;
+  -webkit-user-drag: none;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.viewer-nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.viewer-nav-arrow:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.viewer-nav-prev {
+  left: 20px;
+}
+
+.viewer-nav-next {
+  right: 20px;
+}
+
+.viewer-bottom-bar {
+  padding: 16px 24px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+}
+
+.photo-viewer-backdrop.theme-light .viewer-bottom-bar {
+  background: linear-gradient(to top, rgba(245, 240, 230, 0.8), transparent);
+}
+
+.viewer-memory-title {
+  font-family: 'Cormorant Garamond', Garamond, Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.viewer-memory-date {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.viewer-memory-caption {
+  font-family: 'Caveat', cursive, serif;
+  font-size: 1.45rem;
+  margin: 4px 0 0;
+  max-width: 600px;
+}
+
+/* ---------- Memory Folio Display (On Letter & In Reader) ---------- */
+.folio-letter-section {
+  margin-top: 36px;
+  padding-top: 24px;
+  position: relative;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.folio-letter-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.folio-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--line, rgba(31, 35, 64, 0.15));
+}
+
+.folio-divider-label {
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folio-divider-symbol {
+  color: var(--cta);
+  font-size: 0.7rem;
+}
+
+/* Landscape Mode (Part 11) & Portrait Mode (Part 12) */
+.folio-display-grid {
+  display: grid;
+  gap: 20px;
+  width: 100%;
+}
+
+/* 1 Image: Large Editorial Photograph */
+.folio-display-grid.layout-1 {
+  grid-template-columns: 1fr;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* 2 Images: Balanced Diptych */
+.folio-display-grid.layout-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 3 Images: Editorial Asymmetrical Triptych */
+.folio-display-grid.layout-3 {
+  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-rows: auto auto;
+}
+
+.folio-display-grid.layout-3 .item-1 {
+  grid-row: span 2;
+}
+
+.folio-display-item {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  cursor: pointer;
+  transition: transform 0.22s ease;
+}
+
+.folio-display-item:hover {
+  transform: translateY(-2px);
+}
+
+.folio-display-frame {
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.layout-1 .folio-display-frame {
+  aspect-ratio: 16 / 10;
+}
+
+.layout-2 .folio-display-frame {
+  aspect-ratio: 4 / 3;
+}
+
+.layout-3 .item-1 .folio-display-frame {
+  height: 100%;
+  min-height: 220px;
+}
+
+.layout-3 .item-2 .folio-display-frame,
+.layout-3 .item-3 .folio-display-frame {
+  aspect-ratio: 16 / 10;
+}
+
+.folio-display-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.folio-display-item:hover .folio-display-img {
+  transform: scale(1.025);
+}
+
+.folio-display-hover-hint {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.folio-display-item:hover .folio-display-hover-hint {
+  opacity: 1;
+}
+
+.folio-display-caption {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
+}
+
+.folio-display-date {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.folio-display-note {
+  font-family: 'Caveat', cursive, serif;
+  font-size: 1.15rem;
+  color: var(--ink, var(--navy));
+  margin: 0;
+  line-height: 1.25;
+}
+
+/* Portrait Mode for Mobile Viewports (Part 12) */
+@media (max-width: 640px) {
+  .folio-display-grid.layout-2,
+  .folio-display-grid.layout-3 {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .folio-display-grid.layout-3 .item-1 {
+    grid-row: span 1;
+  }
+
+  .layout-3 .item-1 .folio-display-frame {
+    aspect-ratio: 16 / 10;
+    min-height: auto;
+  }
+
+  .folio-modal-container {
+    padding: 20px 16px 20px;
+    max-height: 94vh;
+  }
+
+  .folio-gallery-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Print Styles */
 @media print {
   /* Hide page background, grain overlay, and site chrome while preserving exact letter colors */
@@ -3105,6 +4258,21 @@ footer .container,
     display: flex !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* Memory Folio in print: visible when attached, avoiding page breaks */
+  .folio-letter-section {
+    display: block !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-top: 20px !important;
+  }
+  .folio-display-frame {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+  .folio-display-hover-hint {
+    display: none !important;
   }
 
   /* Unseal and flatten reader overlay into clean printable page */

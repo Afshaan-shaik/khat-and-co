@@ -27,6 +27,26 @@ export function encodeLetterToHash(letter: LetterData): string {
         t: letter.waxSeal.customText || ''
       } : undefined,
       vnu: letter.voiceNoteUrl ? String(letter.voiceNoteUrl) : undefined,
+      mf: (letter.memoryFolio && letter.memoryFolio.includeInLetter && letter.memoryFolio.items.length > 0) ? {
+        inc: 1,
+        it: letter.memoryFolio.items.slice(0, 3).map((item) => ({
+          id: item.id,
+          k: item.storageObjectKey,
+          fn: item.originalFilename,
+          m: item.mimeType,
+          w: item.width,
+          h: item.height,
+          o: item.orientation,
+          c: item.caption,
+          d: item.memoryDate,
+          t: item.memoryTitle,
+          fp: item.focalPoint,
+          fx: item.focalX,
+          fy: item.focalY,
+          ou: item.originalUrl,
+          pu: item.previewUrl
+        }))
+      } : undefined,
       st: (letter.stickers || []).slice(0, 40).map((stk) => ({
         id: stk.id,
         sId: stk.stickerId,
@@ -201,7 +221,35 @@ export function decodeLetterFromHash(hashStr: string): LetterData | null {
       passphrase: raw.passphrase || raw.p || '',
       fontSize: raw.fontSize || raw.g || 'm',
       language: raw.language || (raw.e === 'hi' ? 'hi' : 'en'),
-      voiceNoteUrl: raw.vnu || raw.voiceNoteUrl || null
+      voiceNoteUrl: raw.vnu || raw.voiceNoteUrl || null,
+      memoryFolio: (raw.mf && Array.isArray(raw.mf.it)) ? {
+        id: `folio_pub_${Date.now()}`,
+        workspaceSessionId: '', // isolated reading context
+        includeInLetter: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        items: raw.mf.it.map((it: any, idx: number) => ({
+          id: String(it.id || `pub_mem_${idx}`),
+          storageObjectKey: String(it.k || ''),
+          originalFilename: String(it.fn || `photo_${idx + 1}.jpg`),
+          mimeType: String(it.m || 'image/jpeg'),
+          byteSize: 0,
+          width: Number(it.w) || 1920,
+          height: Number(it.h) || 1080,
+          orientation: it.o || 'landscape',
+          caption: it.c ? String(it.c) : undefined,
+          memoryDate: it.d ? String(it.d) : undefined,
+          memoryTitle: it.t ? String(it.t) : undefined,
+          focalPoint: it.fp || 'center',
+          focalX: it.fx !== undefined ? Number(it.fx) : undefined,
+          focalY: it.fy !== undefined ? Number(it.fy) : undefined,
+          sortOrder: idx,
+          createdAt: new Date().toISOString(),
+          originalUrl: String(it.ou || it.pu || ''),
+          previewUrl: String(it.pu || it.ou || ''),
+          is4K: Boolean(Number(it.w) >= 3840 || Number(it.h) >= 3840)
+        }))
+      } : undefined
     };
 
     return letter;

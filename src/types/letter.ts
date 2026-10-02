@@ -38,6 +38,49 @@ export interface LetterData {
   id?: string; // unique identifier
   fontSize?: 's' | 'm' | 'l';
   language?: 'en' | 'hi';
+  workspaceSessionId?: string;
+  memoryFolio?: MemoryFolioData;
+}
+
+export type MemoryFocalPoint = 'center' | 'top' | 'bottom' | 'face' | 'custom';
+
+export interface MemoryItem {
+  id: string; // unique identifier, e.g. "mem_12345"
+  storageObjectKey: string; // secure key
+  originalFilename: string;
+  mimeType: string; // 'image/jpeg' | 'image/png' | 'image/webp' | 'image/heic'
+  byteSize: number;
+  width: number; // e.g. 3840
+  height: number; // e.g. 2160
+  orientation: 'landscape' | 'portrait' | 'square';
+  caption?: string; // e.g. "That evening by the sea."
+  memoryDate?: string; // e.g. "14 October 2026"
+  memoryTitle?: string; // optional title
+  focalPoint: MemoryFocalPoint;
+  focalX?: number; // percentage (0-100) if custom
+  focalY?: number; // percentage (0-100) if custom
+  sortOrder: number;
+  createdAt: string;
+  originalUrl: string; // source of truth, 4K preservation
+  previewUrl: string; // high-quality display derivative
+  is4K?: boolean; // true if 4K-class resolution
+}
+
+export interface MemoryFolioData {
+  id: string; // unique folio id, e.g. "folio_12345"
+  workspaceSessionId: string;
+  letterId?: string;
+  items: MemoryItem[]; // 1 to 3 images
+  includeInLetter: boolean; // default: false (Private by default)
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkspaceSessionRecord {
+  id: string; // e.g. "ws_..."
+  sessionToken: string; // cryptographically secure token
+  createdAt: string;
+  lastActiveAt: string;
 }
 
 export interface RecycleBinItem {

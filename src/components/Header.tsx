@@ -16,12 +16,14 @@ interface HeaderProps {
   onOpenTimeCapsule?: () => void;
   onOpenVoiceWizard?: () => void;
   onOpenInspireMe?: () => void;
+  onOpenAtelier?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   theme,
   onToggleTheme,
-  onOpenStudio
+  onOpenStudio,
+  onOpenAtelier
 }) => {
   const isDark = theme === 'dark';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -91,6 +93,20 @@ export const Header: React.FC<HeaderProps> = ({
             data-testid="nav-studio"
           >
             Studio
+          </a>
+          <a
+            href="#atelier"
+            role="button"
+            className="nav-atelier"
+            id="atelier-desktop-trigger"
+            onClick={(e) => {
+              e.preventDefault();
+              if (onOpenAtelier) onOpenAtelier();
+            }}
+            aria-label="Open The Letter Atelier"
+            data-testid="nav-atelier"
+          >
+            Atelier
           </a>
           <a href="#shelf">Shelf</a>
           <a href="#nudge">Nudge</a>
@@ -195,6 +211,21 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   <span className="mobile-nav-num">02</span>
                   <span>Studio</span>
+                </a>
+                <a
+                  href="#atelier"
+                  role="button"
+                  id="atelier-mobile-trigger"
+                  className="mobile-nav-link text-start"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    closeMobileMenu();
+                    if (onOpenAtelier) onOpenAtelier();
+                  }}
+                  data-testid="mobile-nav-atelier"
+                >
+                  <span className="mobile-nav-num">✦</span>
+                  <span>The Letter Atelier</span>
                 </a>
                 <a href="#shelf" className="mobile-nav-link" onClick={handleLinkClick}>
                   <span className="mobile-nav-num">03</span>

@@ -6,6 +6,8 @@ import { renderPostageStampSvg, renderPostmarkSvg } from '../utils/stamps';
 import { STICKER_REGISTRY } from '../constants/stickers';
 import { PAPER_TEMPLATES } from '../constants/templates';
 import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
+import { MemoryFolioDisplay } from './MemoryFolioDisplay';
+import { PhotoViewer } from './PhotoViewer';
 
 interface ReaderModalProps {
   isOpen: boolean;
@@ -48,6 +50,8 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
   const [now, setNow] = useState(Date.now());
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState(false);
+  const [isPhotoViewerOpen, setIsPhotoViewerOpen] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
 
   const paperRef = useRef<HTMLDivElement>(null);
 
@@ -416,6 +420,18 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
                       </button>
                     </div>
                   )}
+
+                  {/* Memory Folio Photographs (when included with letter) */}
+                  {letter?.memoryFolio && letter.memoryFolio.includeInLetter && letter.memoryFolio.items.length > 0 && (
+                    <MemoryFolioDisplay
+                      items={letter.memoryFolio.items}
+                      onOpenPhoto={(idx) => {
+                        setSelectedPhotoIndex(idx);
+                        setIsPhotoViewerOpen(true);
+                      }}
+                      isRecipientView={true}
+                    />
+                  )}
                 </div>
 
                 {/* Placed Stickers Layer */}
@@ -470,6 +486,16 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
           </>
         )}
       </div>
+
+      {/* Fullscreen Photo Viewer */}
+      {letter?.memoryFolio && (
+        <PhotoViewer
+          isOpen={isPhotoViewerOpen}
+          onClose={() => setIsPhotoViewerOpen(false)}
+          items={letter.memoryFolio.items}
+          initialIndex={selectedPhotoIndex}
+        />
+      )}
     </div>
   );
 };

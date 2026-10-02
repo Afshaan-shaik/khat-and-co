@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { encodeLetterToHash } from '../../src/utils/codec';
 import { createDefaultLetter } from '../../src/utils/storage';
 import { LetterData } from '../../src/types/letter';
+import { waitForPageReady } from './helpers/setup';
 import * as fs from 'fs';
 
 test.describe('Letter PDF Export', () => {
@@ -20,8 +21,8 @@ test.describe('Letter PDF Export', () => {
     };
 
     const hash = encodeLetterToHash(testLetter);
-    await page.goto(`http://localhost:4173/#l=${hash}`);
-    await page.evaluate(() => document.fonts.ready);
+    await page.goto(`/#l=${hash}`);
+    await waitForPageReady(page);
 
     // Envelope modal should be visible
     const sealBtn = page.getByTestId('envelope-wax-seal');
@@ -51,8 +52,8 @@ test.describe('Letter PDF Export', () => {
   });
 
   test('downloads PDF from Studio Step 3 (Send)', async ({ page }) => {
-    await page.goto('http://localhost:4173/');
-    await page.evaluate(() => document.fonts.ready);
+    await page.goto('/');
+    await waitForPageReady(page);
 
     // Fill in recipient and letter body using proper inputs
     const recInput = page.locator('#inTo');
@@ -107,8 +108,8 @@ test.describe('Letter PDF Export', () => {
     };
 
     const hash = encodeLetterToHash(testLetter);
-    await page.goto(`http://localhost:4173/#l=${hash}`);
-    await page.evaluate(() => document.fonts.ready);
+    await page.goto(`/#l=${hash}`);
+    await waitForPageReady(page);
 
     const sealBtn = page.getByTestId('envelope-wax-seal');
     await expect(sealBtn).toBeVisible();
@@ -147,8 +148,8 @@ test.describe('Letter PDF Export', () => {
     };
 
     const hash = encodeLetterToHash(testLetter);
-    await page.goto(`http://localhost:4173/#l=${hash}`);
-    await page.evaluate(() => document.fonts.ready);
+    await page.goto(`/#l=${hash}`);
+    await waitForPageReady(page);
 
     const sealBtn = page.getByTestId('envelope-wax-seal');
     await expect(sealBtn).toBeVisible();

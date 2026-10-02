@@ -1,6 +1,7 @@
 import { LetterData, RecycleBinItem } from '../types/letter';
 import { PAPER_TEMPLATES } from '../constants/templates';
 import { DEFAULT_WAX_SEAL } from '../constants/waxSeal';
+import { getOrCreateWorkspaceSession } from '../services/session';
 
 export const DRAFT_STORAGE_KEY = 'khat-and-co:draft';
 export const THEME_STORAGE_KEY = 'khat-and-co:theme';
@@ -85,31 +86,104 @@ export function sanitizeLoadedLetter(raw: any): LetterData {
     }
   }
 
+  // Sanitize Memory Folio if attached
+  let memoryFolio = undefined;
+  if (raw.memoryFolio && typeof raw.memoryFolio === 'object') {
+    const rawItems = Array.isArray(raw.memoryFolio.items) ? raw.memoryFolio.items : [];
+    const sanitizedItems = rawItems.slice(0, 3).map((item: any, idx: number) => ({
+      id: String(item.id || `mem_${Date.now()}_${idx}`),
+      storageObjectKey: String(item.storageObjectKey || item.id || `key_${idx}`),
+      originalFilename: String(item.originalFilename || `photo_${idx + 1}.jpg`),
+      mimeType: String(item.mimeType || 'image/jpeg'),
+      byteSize: Number(item.byteSize) || 0,
+      width: Number(item.width) || 1920,
+      height: Number(item.height) || 1080,
+      orientation: item.orientation === 'portrait' ? 'portrait' : item.orientation === 'square' ? 'square' : 'landscape',
+      caption: item.caption ? String(item.caption).slice(0, 200) : undefined,
+      memoryDate: item.memoryDate ? String(item.memoryDate).slice(0, 100) : undefined,
+      memoryTitle: item.memoryTitle ? String(item.memoryTitle).slice(0, 100) : undefined,
+      focalPoint: item.focalPoint || 'center',
+      focalX: item.focalX !== undefined ? Number(item.focalX) : undefined,
+      focalY: item.focalY !== undefined ? Number(item.focalY) : undefined,
+      sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : idx,
+      createdAt: item.createdAt || new Date().toISOString(),
+      originalUrl: String(item.originalUrl || item.previewUrl || ''),
+      previewUrl: String(item.previewUrl || item.originalUrl || ''),
+      is4K: Boolean(item.is4K || (Number(item.width) >= 3840 || Number(item.height) >= 3840))
+    }));
+
+    memoryFolio = {
+      id: String(raw.memoryFolio.id || `folio_${Date.now()}`),
+      workspaceSessionId: String(raw.memoryFolio.workspaceSessionId || raw.workspaceSessionId || ''),
+      letterId: raw.memoryFolio.letterId || raw.id,
+      items: sanitizedItems,
+      includeInLetter: Boolean(raw.memoryFolio.includeInLetter),
+      createdAt: raw.memoryFolio.createdAt || new Date().toISOString(),
+      updatedAt: raw.memoryFolio.updatedAt || new Date().toISOString()
+    };
+  }
+
   return {
     ...defaultLetter,
     ...raw,
     waxSeal,
-    stickers: Array.isArray(raw.stickers) ? raw.stickers : []
+    stickers: Array.isArray(raw.stickers) ? raw.stickers : [],
+    memoryFolio
   };
 }
 
-export function loadSavedDraft(): LetterData {
+export function loadSavedDraft(explicitSessionId?: string): LetterData {
   try {
-    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (!raw) return createDefaultLetter();
-    const parsed = JSON.parse(raw);
-    return sanitizeLoadedLetter(parsed);
+    const { session } = getOrCreateWorkspaceSession();
+    const effectiveSessionId = explicitSessionId || session.id;
+    const sessionKey = `khath:workspace_draft:${effectiveSessionId}`;
+
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const sessionRaw = window.sessionStorage.getItem(sessionKey);
+      if (sessionRaw) {
+        const parsed = JSON.parse(sessionRaw);
+        return sanitizeLoadedLetter({
+          ...parsed,
+          workspaceSessionId: effectiveSessionId
+        });
+      }
+    }
+
+    // Fresh workspace session starts with a clean slate
+    const freshLetter = createDefaultLetter();
+    freshLetter.workspaceSessionId = effectiveSessionId;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem(sessionKey, JSON.stringify(freshLetter));
+    }
+    return freshLetter;
   } catch (err) {
-    console.warn('Could not load draft from localStorage', err);
+    console.warn('Could not load draft from session storage', err);
     return createDefaultLetter();
   }
 }
 
-export function saveDraft(letter: LetterData): void {
+export function saveDraft(letter: LetterData, explicitSessionId?: string): void {
   try {
-    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(letter));
+    const { session } = getOrCreateWorkspaceSession();
+    const effectiveSessionId = explicitSessionId || letter.workspaceSessionId || session.id;
+    const sessionKey = `khath:workspace_draft:${effectiveSessionId}`;
+
+    const letterToSave: LetterData = {
+      ...letter,
+      workspaceSessionId: effectiveSessionId
+    };
+
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem(sessionKey, JSON.stringify(letterToSave));
+    }
+    // Backward compatibility mirror for existing tests and legacy recovery
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        window.localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(letterToSave));
+      } catch {}
+    }
   } catch (err) {
-    console.warn('Could not save draft to localStorage', err);
+    console.warn('Could not save draft to session storage', err);
   }
 }
 

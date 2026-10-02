@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LetterData, PlacedSticker } from '../types/letter';
+import { LetterData, PlacedSticker, MemoryItem } from '../types/letter';
 import { sfx } from '../utils/sound';
 import { renderWaxSealSvg, WAX_PALETTES, WAX_SEAL_OPTIONS, resolveWaxSeal } from '../constants/waxSeal';
 import { renderPostageStampSvg, renderPostmarkSvg, POSTAGE_STAMPS } from '../utils/stamps';
@@ -12,6 +12,8 @@ import { encodeLetterToHash } from '../utils/codec';
 import { copyTextToClipboard } from '../utils/clipboard';
 import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
 import { hasAudioAttachment } from './ReaderModal';
+import { MemoryFolioDisplay } from './MemoryFolioDisplay';
+import { publishLetterMemoryFolio } from '../services/memoryStorage';
 
 interface StudioSectionProps {
   letter: LetterData;
@@ -19,6 +21,9 @@ interface StudioSectionProps {
   onOpenReader: (letter: LetterData, opt?: { peek?: boolean }) => void;
   onLetterSealed: () => void;
   showToast: (msg: string) => void;
+  onOpenAtelier?: () => void;
+  onOpenMemoryFolio?: () => void;
+  onOpenPhotoViewer?: (items: MemoryItem[], index: number) => void;
 }
 
 type ToolType = 'text' | 'stickers' | 'paper' | 'seal' | 'more';
@@ -28,7 +33,10 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
   onChangeLetter,
   onOpenReader,
   onLetterSealed,
-  showToast
+  showToast,
+  onOpenAtelier,
+  onOpenMemoryFolio,
+  onOpenPhotoViewer
 }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [activeTool, setActiveTool] = useState<ToolType>('text');
@@ -237,7 +245,23 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
 
       // Generate share link
       createShortShareUrl(letter)
-        .then((url) => setShareUrl(url))
+        .then(async (url) => {
+          setShareUrl(url);
+
+          // If Memory Folio is included, publish the memory items for this letter slug
+          if (
+            letter.memoryFolio &&
+            letter.memoryFolio.includeInLetter &&
+            letter.memoryFolio.items.length > 0
+          ) {
+            const match = url.match(/[?&]id=([^&#]+)/);
+            const slug = match ? decodeURIComponent(match[1]) : '';
+            if (slug) {
+              const memIds = letter.memoryFolio.items.map((m) => m.id);
+              await publishLetterMemoryFolio(slug, memIds).catch(() => {});
+            }
+          }
+        })
         .catch(() => {
           const fallback = `${window.location.origin}${window.location.pathname}#l=${encodeLetterToHash(letter)}`;
           setShareUrl(fallback);
@@ -413,6 +437,24 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                     </svg>
                     <span>More</span>
                   </button>
+                  <button
+                    className="tool"
+                    type="button"
+                    onClick={() => {
+                      sfx.rustle();
+                      if (onOpenMemoryFolio) onOpenMemoryFolio();
+                      else if (onOpenAtelier) onOpenAtelier();
+                    }}
+                    title="Memory Folio — Keep a few moments with this letter"
+                    data-testid="tool-memory-folio"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                      <circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                    <span>Folio</span>
+                  </button>
                 </div>
 
                 {/* Tactile Letter Paper */}
@@ -492,6 +534,18 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                         <div className="ps-preview" id="psPrev">
                           P.S. {letter.ps}
                         </div>
+                      )}
+
+                      {/* Memory Folio display on author sheet */}
+                      {letter.memoryFolio && letter.memoryFolio.items.length > 0 && (
+                        <MemoryFolioDisplay
+                          items={letter.memoryFolio.items}
+                          onOpenPhoto={(idx) => {
+                            if (onOpenPhotoViewer) {
+                              onOpenPhotoViewer(letter.memoryFolio!.items, idx);
+                            }
+                          }}
+                        />
                       )}
                     </div>
 
@@ -825,6 +879,30 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                         {recordingError ||
                           'Up to 30 seconds. Voice notes play directly on this letter.'}
                       </p>
+
+                      <div className="lbl">✦ Memory Folio</div>
+                      <div style={{ background: 'var(--chip)', padding: '14px', borderRadius: '12px', marginTop: '6px' }}>
+                        <p style={{ fontStyle: 'italic', fontSize: '0.9rem', margin: '0 0 10px 0', color: 'var(--muted)' }}>
+                          “A few moments worth keeping.” Attach 1 to 3 photographs as a private photographic keepsake.
+                        </p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
+                            {letter.memoryFolio?.items.length
+                              ? `${letter.memoryFolio.items.length} photograph${letter.memoryFolio.items.length === 1 ? '' : 's'} kept`
+                              : 'No photos attached'}
+                          </span>
+                          <button
+                            type="button"
+                            className="btn cta sm"
+                            onClick={() => {
+                              sfx.rustle();
+                              if (onOpenMemoryFolio) onOpenMemoryFolio();
+                            }}
+                          >
+                            Open Folio
+                          </button>
+                        </div>
+                      </div>
 
                       <div className="lbl">✦ Inspiration</div>
                       <div style={{ background: 'var(--chip)', padding: '12px', borderRadius: '12px', marginTop: '6px' }}>
@@ -1231,6 +1309,14 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
               <div className="ps torn">
                 <div className="ps-note">P.S. {letter.ps}</div>
               </div>
+            )}
+
+            {/* Memory Folio display on export paper (Part 34: only if included) */}
+            {letter.memoryFolio && letter.memoryFolio.includeInLetter && letter.memoryFolio.items.length > 0 && (
+              <MemoryFolioDisplay
+                items={letter.memoryFolio.items}
+                onOpenPhoto={() => {}}
+              />
             )}
           </div>
 
