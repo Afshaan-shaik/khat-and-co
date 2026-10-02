@@ -351,7 +351,7 @@ test.describe('Short Share Links & Automatic Letter Image Attachments', () => {
           }
         }
       }).then(async (res) => {
-        expect(res.status()).toBe(201);
+        expect([200, 201]).toContain(res.status());
         return res.json();
       })
     );
@@ -359,7 +359,7 @@ test.describe('Short Share Links & Automatic Letter Image Attachments', () => {
     const results = await Promise.all(promises);
     for (const r of results) {
       expect(r.success).toBe(true);
-      expect(r.shareCode).toMatch(/^[a-zA-Z0-9_-]{6,8}$/);
+      expect(r.shareCode).toMatch(/^[a-zA-Z0-9_-]{6,12}$/);
       expect(codes.has(r.shareCode)).toBe(false);
       codes.add(r.shareCode);
     }

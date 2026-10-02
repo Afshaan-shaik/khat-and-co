@@ -185,28 +185,19 @@ export async function fetchLetterByShareCode(code: string): Promise<LetterData |
 
     if (res.ok) {
       const data = await res.json();
-      if (data?.letter) {
-        return sanitizeLoadedLetter(data.letter);
+      const letter = data?.letter || data;
+      if (letter && (letter.body || letter.recipient)) {
+        return sanitizeLoadedLetter(letter);
       }
     }
   } catch (err) {
     console.warn(`Server resolve failed for share code "${cleanCode}":`, err);
   }
 
-  // 2. Check Supabase
-  if (isSupabaseConfigured()) {
-    try {
-      const fromSupabase = await getLetterFromSupabase(cleanCode);
-      if (fromSupabase) return fromSupabase;
-    } catch (err) {
-      console.warn(`Supabase fetch failed for id "${cleanCode}":`, err);
-    }
-  }
-
-  // 3. Check Bytebin (for legacy or fallback links)
+  // 2. Check Bytebin direct (Crucial for cold lambdas or multi-device WhatsApp links)
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     const res = await fetch(`${BYTEBIN_ENDPOINT}/${encodeURIComponent(cleanCode)}`, {
       signal: controller.signal
@@ -216,10 +207,23 @@ export async function fetchLetterByShareCode(code: string): Promise<LetterData |
 
     if (res.ok) {
       const data = await res.json();
-      return sanitizeLoadedLetter(data);
+      const letter = data?.letter || data;
+      if (letter && (letter.body || letter.recipient)) {
+        return sanitizeLoadedLetter(letter);
+      }
     }
   } catch (err) {
     console.warn(`Failed to fetch letter by short id "${cleanCode}":`, err);
+  }
+
+  // 3. Check Supabase
+  if (isSupabaseConfigured()) {
+    try {
+      const fromSupabase = await getLetterFromSupabase(cleanCode);
+      if (fromSupabase) return fromSupabase;
+    } catch (err) {
+      console.warn(`Supabase fetch failed for id "${cleanCode}":`, err);
+    }
   }
 
   return null;

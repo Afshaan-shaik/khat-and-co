@@ -617,32 +617,77 @@ export async function handleApiRequest(
         return true;
       }
 
-      // Generate unique Base62 share code (6-8 chars) with collision safety (Part 12 & 13)
-      let shareCode = '';
-      let attempts = 0;
-      let length = 6;
-      while (attempts < 15) {
-        shareCode = generateShareCode(length);
-        if (!sharedLettersByCode.has(shareCode)) {
-          break;
-        }
-        attempts++;
-        if (attempts > 6) length = 7;
-        if (attempts > 12) length = 8;
-      }
-
       // Sanitize letter payload for recipient (strip private workspace identifiers)
       const recipientLetter = {
         ...letter,
         workspaceSessionId: undefined, // NEVER expose creator session in public letter!
         memoryFolio: letter.memoryFolio?.items?.length ? {
-          id: `folio_${shareCode}`,
+          id: `folio_${Date.now()}`,
           workspaceSessionId: '',
-          items: letter.memoryFolio.items.slice(0, 4),
+          items: letter.memoryFolio.items.slice(0, 4).map((item: any) => ({
+            id: item.id,
+            caption: item.caption,
+            memoryDate: item.memoryDate,
+            memoryTitle: item.memoryTitle,
+            width: item.width,
+            height: item.height,
+            orientation: item.orientation,
+            is4K: item.is4K,
+            focalPoint: item.focalPoint,
+            focalX: item.focalX,
+            focalY: item.focalY,
+            originalFilename: item.originalFilename,
+            // Ensure previewUrl or originalUrl is available
+            previewUrl: item.previewUrl || item.originalUrl || '',
+            originalUrl: item.previewUrl || item.originalUrl || ''
+          })),
           createdAt: letter.memoryFolio.createdAt || new Date().toISOString(),
           updatedAt: new Date().toISOString()
         } : undefined
       };
+
+      // 1. Persist to Bytebin global document store (survives cold starts, multi-container lambdas, all devices)
+      let shareCode = '';
+      try {
+        const bytebinPayload = JSON.stringify({
+          contentHash,
+          letter: recipientLetter,
+          createdAt: new Date().toISOString()
+        });
+
+        const bRes = await fetch('https://bytebin.lucko.me/post', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'User-Agent': 'Khath-and-Co'
+          },
+          body: bytebinPayload
+        });
+
+        if (bRes.ok) {
+          const bData = await bRes.json();
+          if (bData?.key && typeof bData.key === 'string' && bData.key.trim().length > 2) {
+            shareCode = bData.key.trim();
+          }
+        }
+      } catch (bErr) {
+        console.warn('Bytebin persistence notice in /api/letter/share:', bErr);
+      }
+
+      // 2. Fallback: If Bytebin is offline/unreachable, generate unique Base62 code
+      if (!shareCode) {
+        let attempts = 0;
+        let length = 6;
+        while (attempts < 15) {
+          shareCode = generateShareCode(length);
+          if (!sharedLettersByCode.has(shareCode)) {
+            break;
+          }
+          attempts++;
+          if (attempts > 6) length = 7;
+          if (attempts > 12) length = 8;
+        }
+      }
 
       // Automatically associate and publish any attached memories
       if (recipientLetter.memoryFolio?.items) {
@@ -700,7 +745,35 @@ export async function handleApiRequest(
       return true;
     }
 
-    const record = sharedLettersByCode.get(code);
+    // 1. Check in-memory map first
+    let record = sharedLettersByCode.get(code);
+
+    // 2. If NOT in memory (fresh lambda container, cold boot, multi-device access), fetch from Bytebin!
+    if (!record) {
+      try {
+        const bRes = await fetch(`https://bytebin.lucko.me/${encodeURIComponent(code)}`);
+        if (bRes.ok) {
+          const bData = await bRes.json();
+          const loadedLetter = bData?.letter || bData;
+          if (loadedLetter && (loadedLetter.body || loadedLetter.recipient)) {
+            record = {
+              shareCode: code,
+              contentHash: bData.contentHash || '',
+              letter: loadedLetter,
+              createdAt: bData.createdAt || new Date().toISOString(),
+              views: 1
+            };
+            sharedLettersByCode.set(code, record);
+            if (record.contentHash) {
+              sharedCodeByHash.set(record.contentHash, code);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`Bytebin resolve error for ${code}:`, err);
+      }
+    }
+
     if (!record) {
       sendJson(res, 404, { error: 'Letter not found' });
       return true;
