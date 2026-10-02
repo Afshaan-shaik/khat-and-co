@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 import { attachErrorListeners, waitForPageReady } from './helpers/setup';
-import { encodeLetterToHash } from '../../src/utils/codec';
 
 // Generate a valid 4K (3840x2160) synthetic JPEG buffer with valid EXIF/SOF markers
 function createSynthetic4kJpeg(): Buffer {
@@ -170,8 +169,8 @@ async function openAtelier(page: any): Promise<void> {
   }
 }
 
-test.describe('Memory Folio UI, Atelier & Fullscreen Viewer', () => {
-  test('opens Atelier, launches Memory Folio, uploads photo, verifies viewer and controls', async ({ page }) => {
+test.describe('Memory Folio UI, 1–4 Photographs & Fullscreen Viewer', () => {
+  test('opens Atelier, launches Memory Folio, verifies 4-photo quota and NO privacy toggle', async ({ page }) => {
     attachErrorListeners(page);
     await page.goto('/');
     await waitForPageReady(page);
@@ -193,7 +192,14 @@ test.describe('Memory Folio UI, Atelier & Fullscreen Viewer', () => {
     const folioModal = page.locator('.folio-modal-backdrop');
     await expect(folioModal).toBeVisible();
     await expect(folioModal.getByText(/A few moments worth keeping/i)).toBeVisible();
-    await expect(folioModal.getByText(/of 3.*photographs/i)).toBeVisible();
+    // Verify 4-photographs capacity (Part 3)
+    await expect(folioModal.getByText(/of 4.*photographs/i)).toBeVisible();
+
+    // Verify COMPLETE REMOVAL of Privacy Toggle UI (Part 2 & Part 30)
+    await expect(page.locator('#folio-include-shared')).toHaveCount(0);
+    await expect(page.locator('.folio-privacy-card')).toHaveCount(0);
+    await expect(page.getByText(/Private until toggled on/i)).toHaveCount(0);
+    await expect(page.getByText(/Include in shared letter/i)).toHaveCount(0);
 
     // 4. Upload synthetic photo via file input
     const jpeg4k = createSynthetic4kJpeg();
@@ -247,79 +253,72 @@ test.describe('Memory Folio UI, Atelier & Fullscreen Viewer', () => {
       await waitForPageReady(page);
     }
 
-    // 7. Verify Memory Folio Display appears on the letter sheet in Studio
+    // 7. Verify Memory Folio Display appears automatically on the letter sheet in Studio
     const onSheetDisplay = page.locator('.memory-folio-display').first();
     await expect(onSheetDisplay).toBeVisible();
     await expect(onSheetDisplay.locator('.memory-stamp-caption')).toContainText('That evening by the sea.');
   });
 });
 
-test.describe('Sharing & Privacy Boundaries', () => {
-  test('Case K: Private memories are NOT exposed in shared letter unless explicitly published', async ({ page, browser }) => {
+test.describe('Short Share Links & Automatic Letter Image Attachments', () => {
+  test('Letter with attached photo shares via short URL /l/:code and displays for recipient', async ({ page, browser, baseURL }) => {
     attachErrorListeners(page);
     await page.goto('/');
     await waitForPageReady(page);
 
-    // Open Atelier and Memory Folio
+    // 1. Write letter
+    const letterBody = page.getByTestId('letter-body');
+    await letterBody.click();
+    await letterBody.fill('This letter travels with a photograph tucked inside.');
+
+    // 2. Open Atelier and attach photograph
     await openAtelier(page);
     await page.locator('#letter-atelier-drawer').getByText(/Memory Folio/i).first().click();
 
-    // Upload an image
     const jpeg4k = createSynthetic4kJpeg();
     await page.locator('.folio-modal-backdrop input[type="file"]').setInputFiles({
-      name: 'private_keepsake.jpg',
+      name: 'coastal_memory.jpg',
       mimeType: 'image/jpeg',
       buffer: jpeg4k
     });
 
     const memoryCard = page.locator('.folio-photo-card').first();
     await expect(memoryCard).toBeVisible({ timeout: 15_000 });
+    await memoryCard.locator('input[id^="folio-cap-"]').fill('Golden hour tide.');
 
-    // By default, "Include with Letter" must be FALSE (Private)
-    const includeCheckbox = page.locator('#folio-include-shared');
-    expect(await includeCheckbox.isChecked()).toBe(false);
-
-    // Close modal
+    // Close folio modal
     await page.locator('.folio-close-btn').click();
 
-    // Write a note in the letter body
-    const letterBody = page.getByTestId('letter-body');
-    await letterBody.click();
-    await letterBody.fill('This letter holds a private story.');
+    // 3. Step 1 -> Step 2: Continue to the envelope
+    const continueToSealBtn = page.getByRole('button', { name: /continue to the envelope/i }).first();
+    await continueToSealBtn.scrollIntoViewIfNeeded();
+    await continueToSealBtn.click();
 
-    // Wait for debounced draft autosave
-    await page.waitForTimeout(600);
+    // Step 2: Press the seal to seal letter and generate short URL
+    const pressSealBtn = page.locator('#pressSeal');
+    await expect(pressSealBtn).toBeVisible({ timeout: 10_000 });
+    await pressSealBtn.click();
 
-    // Get current draft from localStorage
-    const draftJson = await page.evaluate(() => {
-      // Find workspace draft
-      const sid = sessionStorage.getItem('khath:workspace_session_id');
-      return sessionStorage.getItem(`khath:workspace_draft:${sid}`) || sessionStorage.getItem('khat-and-co:draft') || localStorage.getItem('khat-and-co:draft');
-    });
-    expect(draftJson).toBeTruthy();
-    const draftObj = JSON.parse(draftJson!);
+    // Step 3: Verify the Short URL input (#linkOut)
+    const shareUrlInput = page.locator('#linkOut');
+    await expect(shareUrlInput).toBeVisible({ timeout: 15_000 });
+    await expect(shareUrlInput).not.toHaveValue('', { timeout: 10_000 });
 
-    // Memory Folio in draft has includeInLetter: false
-    expect(draftObj.memoryFolio?.includeInLetter).toBeFalsy();
+    const sharedUrl = await shareUrlInput.inputValue();
+    // Must be a clean short URL: /l/:code or /letter/:code
+    expect(sharedUrl).toMatch(/\/l\/[a-zA-Z0-9_-]{6,8}/);
 
-    // Encode letter into share link hash
-    const shareHash = encodeLetterToHash(draftObj);
-    expect(shareHash).toBeTruthy();
+    // Verify Copy Link button copies short canonical link
+    const copyLinkBtn = page.locator('#copyBtn');
+    await copyLinkBtn.click();
+    // Toast should say "Link copied."
+    await expect(page.locator('.khat-toast')).toContainText('Link copied.');
 
-    // Open the shared letter in a completely separate recipient browser context
+    // 4. Open the short URL in an independent recipient browser context
     const recipientContext = await browser.newContext();
     const recipientPage = await recipientContext.newPage();
-    await recipientPage.goto(`/#l=${shareHash}`);
+    await recipientPage.goto(sharedUrl);
     await waitForPageReady(recipientPage);
-
-    // Recipient must NOT have the sender's workspace session id
-    const recipientSession = await recipientPage.evaluate(() => {
-      return sessionStorage.getItem('khath:workspace_session_id');
-    });
-    const senderSession = await page.evaluate(() => {
-      return sessionStorage.getItem('khath:workspace_session_id');
-    });
-    expect(recipientSession).not.toBe(senderSession);
 
     // Recipient unseals the letter
     const breakSealBtn = recipientPage.getByRole('button', { name: /break the wax seal|tap the seal/i }).first();
@@ -328,10 +327,68 @@ test.describe('Sharing & Privacy Boundaries', () => {
       await recipientPage.waitForTimeout(1000);
     }
 
-    // Verify recipient view does NOT display the private Memory Folio
+    // Recipient sees letter text
+    await expect(recipientPage.getByText('This letter travels with a photograph tucked inside.')).toBeVisible();
+
+    // Recipient AUTOMATICALLY sees the attached photograph (NO toggle required)
     const recipientFolio = recipientPage.locator('.memory-folio-display');
-    await expect(recipientFolio).toBeHidden();
+    await expect(recipientFolio).toBeVisible();
+    await expect(recipientFolio.locator('.memory-stamp-caption')).toContainText('Golden hour tide.');
 
     await recipientContext.close();
+  });
+
+  test('Concurrency & Uniqueness: 50 simultaneous share requests produce unique codes without collision', async ({ request, baseURL }) => {
+    const codes = new Set<string>();
+    const promises = Array.from({ length: 50 }, (_, i) =>
+      request.post(`${baseURL}/api/letter/share`, {
+        data: {
+          letter: {
+            recipient: `Dear Friend ${i}`,
+            sender: `Sender ${i}`,
+            body: `This is unique concurrent test letter payload index ${i}. Each one must have a unique share code.`,
+            templateId: 'cream-laid'
+          }
+        }
+      }).then(async (res) => {
+        expect(res.status()).toBe(201);
+        return res.json();
+      })
+    );
+
+    const results = await Promise.all(promises);
+    for (const r of results) {
+      expect(r.success).toBe(true);
+      expect(r.shareCode).toMatch(/^[a-zA-Z0-9_-]{6,8}$/);
+      expect(codes.has(r.shareCode)).toBe(false);
+      codes.add(r.shareCode);
+    }
+    expect(codes.size).toBe(50);
+
+    // Test Repeated Share on the exact same letter content (Part 25)
+    const repeatRes = await request.post(`${baseURL}/api/letter/share`, {
+      data: {
+        letter: {
+          recipient: `Dear Friend 0`,
+          sender: `Sender 0`,
+          body: `This is unique concurrent test letter payload index 0. Each one must have a unique share code.`,
+          templateId: 'cream-laid'
+        }
+      }
+    });
+    expect(repeatRes.status()).toBe(200);
+    const repeatData = await repeatRes.json();
+    expect(repeatData.shareCode).toBe(results[0].shareCode);
+    expect(repeatData.isRepeated).toBe(true);
+
+    // Test Resolution of generated share code
+    const resolveRes = await request.get(`${baseURL}/api/letter/resolve?code=${results[0].shareCode}`);
+    expect(resolveRes.status()).toBe(200);
+    const resolveData = await resolveRes.json();
+    expect(resolveData.letter.body).toBe('This is unique concurrent test letter payload index 0. Each one must have a unique share code.');
+
+    // Test Invalid / Nonexistent share code (Part 32 Test 11)
+    const invalidRes = await request.get(`${baseURL}/api/letter/resolve?code=nonExistentXYZ999`);
+    expect(invalidRes.status()).toBe(404);
   });
 });

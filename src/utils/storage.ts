@@ -90,7 +90,7 @@ export function sanitizeLoadedLetter(raw: any): LetterData {
   let memoryFolio = undefined;
   if (raw.memoryFolio && typeof raw.memoryFolio === 'object') {
     const rawItems = Array.isArray(raw.memoryFolio.items) ? raw.memoryFolio.items : [];
-    const sanitizedItems = rawItems.slice(0, 3).map((item: any, idx: number) => ({
+    const sanitizedItems = rawItems.slice(0, 4).map((item: any, idx: number) => ({
       id: String(item.id || `mem_${Date.now()}_${idx}`),
       storageObjectKey: String(item.storageObjectKey || item.id || `key_${idx}`),
       originalFilename: String(item.originalFilename || `photo_${idx + 1}.jpg`),
@@ -117,7 +117,7 @@ export function sanitizeLoadedLetter(raw: any): LetterData {
       workspaceSessionId: String(raw.memoryFolio.workspaceSessionId || raw.workspaceSessionId || ''),
       letterId: raw.memoryFolio.letterId || raw.id,
       items: sanitizedItems,
-      includeInLetter: Boolean(raw.memoryFolio.includeInLetter),
+      includeInLetter: true,
       createdAt: raw.memoryFolio.createdAt || new Date().toISOString(),
       updatedAt: raw.memoryFolio.updatedAt || new Date().toISOString()
     };

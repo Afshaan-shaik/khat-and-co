@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
+import crypto from 'crypto';
 
 // Private in-memory store for development and serverless execution
 interface SessionRecord {
@@ -38,9 +39,61 @@ interface PublishedLetterRecord {
   publishedMemoryIds: string[];
 }
 
+export interface SharedLetterEntry {
+  shareCode: string;
+  contentHash: string;
+  letter: any;
+  createdAt: string;
+  views: number;
+}
+
 const sessions = new Map<string, SessionRecord>();
 const memories = new Map<string, StoredMemory>();
 const publishedLetters = new Map<string, PublishedLetterRecord>();
+const sharedLettersByCode = new Map<string, SharedLetterEntry>();
+const sharedCodeByHash = new Map<string, string>();
+
+const BASE62_CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+
+function generateShareCode(length = 6): string {
+  const bytes = crypto.randomBytes(length);
+  let code = '';
+  for (let i = 0; i < length; i++) {
+    code += BASE62_CHARS[bytes[i] % 62];
+  }
+  return code;
+}
+
+function computeLetterContentHash(letter: any): string {
+  const normalized = {
+    recipient: (letter.recipient || '').trim(),
+    sender: (letter.sender || '').trim(),
+    body: (letter.body || '').trim(),
+    signoff: (letter.signoff || '').trim(),
+    greeting: (letter.greeting || '').trim(),
+    templateId: letter.templateId || '',
+    fontId: letter.fontId || '',
+    inkColor: letter.inkColor || '',
+    waxSeal: letter.waxSeal || null,
+    city: letter.city || '',
+    ps: letter.ps || '',
+    unlockDate: letter.unlockDate || '',
+    passphrase: letter.passphrase || '',
+    voiceNoteUrl: letter.voiceNoteUrl || null,
+    stickers: (letter.stickers || []).map((s: any) => `${s.stickerId}:${s.x}:${s.y}`),
+    photos: (letter.memoryFolio?.items || []).map((m: any) => m.id || m.storageObjectKey)
+  };
+  return crypto.createHash('sha256').update(JSON.stringify(normalized)).digest('hex').slice(0, 24);
+}
+
+function getBaseUrl(req: IncomingMessage, url: URL): string {
+  const host = (req.headers['x-forwarded-host'] as string) || (req.headers['host'] as string) || url.host || 'khath-and-co.vercel.app';
+  const proto = (req.headers['x-forwarded-proto'] as string) || 'https';
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    return `http://${host}`;
+  }
+  return `${proto}://${host}`;
+}
 
 // Helper to validate image magic bytes
 function validateMagicBytes(buffer: Buffer): { valid: boolean; mimeType: string } {
@@ -232,14 +285,14 @@ export async function handleApiRequest(
       return true;
     }
 
-    // Check count of memories for this workspace (1-3 images max)
+    // Check count of memories for this workspace (1-4 images max)
     const existing = Array.from(memories.values()).filter(
       (m) => m.workspaceSessionId === sessionId
     );
 
-    if (existing.length >= 3) {
+    if (existing.length >= 4) {
       sendJson(res, 400, {
-        error: 'Memory Folio limit reached (maximum 3 photographs allowed per letter)'
+        error: 'Memory Folio limit reached (maximum 4 photographs allowed per letter)'
       });
       return true;
     }
@@ -264,9 +317,9 @@ export async function handleApiRequest(
     const existing = Array.from(memories.values()).filter(
       (m) => m.workspaceSessionId === sessionId
     );
-    if (existing.length >= 3) {
+    if (existing.length >= 4) {
       sendJson(res, 400, {
-        error: 'Memory Folio supports a maximum of 3 photographs per letter'
+        error: 'Memory Folio supports a maximum of 4 photographs per letter'
       });
       return true;
     }
@@ -538,7 +591,131 @@ export async function handleApiRequest(
     return true;
   }
 
-  // 8. POST /api/letter/publish-folio (Grant public recipient access to selected memories)
+  // 8. POST /api/letter/share (Create canonical short URL for letter)
+  if ((pathname === '/api/letter/share' || pathname === '/api/letter/publish') && method === 'POST') {
+    try {
+      const body = await parseJsonBody(req);
+      const letter = body.letter;
+      if (!letter || !letter.body) {
+        sendJson(res, 400, { error: 'Invalid letter payload' });
+        return true;
+      }
+
+      // Check if letter was already published with same content (Repeated Share - Part 25)
+      const contentHash = computeLetterContentHash(letter);
+      const existingCode = sharedCodeByHash.get(contentHash);
+      const origin = getBaseUrl(req, url);
+
+      if (existingCode && sharedLettersByCode.has(existingCode)) {
+        sendJson(res, 200, {
+          success: true,
+          shareCode: existingCode,
+          shortUrl: `${origin}/l/${existingCode}`,
+          path: `/l/${existingCode}`,
+          isRepeated: true
+        });
+        return true;
+      }
+
+      // Generate unique Base62 share code (6-8 chars) with collision safety (Part 12 & 13)
+      let shareCode = '';
+      let attempts = 0;
+      let length = 6;
+      while (attempts < 15) {
+        shareCode = generateShareCode(length);
+        if (!sharedLettersByCode.has(shareCode)) {
+          break;
+        }
+        attempts++;
+        if (attempts > 6) length = 7;
+        if (attempts > 12) length = 8;
+      }
+
+      // Sanitize letter payload for recipient (strip private workspace identifiers)
+      const recipientLetter = {
+        ...letter,
+        workspaceSessionId: undefined, // NEVER expose creator session in public letter!
+        memoryFolio: letter.memoryFolio?.items?.length ? {
+          id: `folio_${shareCode}`,
+          workspaceSessionId: '',
+          items: letter.memoryFolio.items.slice(0, 4),
+          createdAt: letter.memoryFolio.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        } : undefined
+      };
+
+      // Automatically associate and publish any attached memories
+      if (recipientLetter.memoryFolio?.items) {
+        for (const item of recipientLetter.memoryFolio.items) {
+          const mem = memories.get(item.id);
+          if (mem) {
+            mem.isPublished = true;
+            mem.publishedLetterSlug = shareCode;
+          }
+        }
+      }
+
+      sharedLettersByCode.set(shareCode, {
+        shareCode,
+        contentHash,
+        letter: recipientLetter,
+        createdAt: new Date().toISOString(),
+        views: 0
+      });
+      sharedCodeByHash.set(contentHash, shareCode);
+
+      sendJson(res, 201, {
+        success: true,
+        shareCode,
+        shortUrl: `${origin}/l/${shareCode}`,
+        path: `/l/${shareCode}`
+      });
+      return true;
+    } catch (err: any) {
+      console.error('Error publishing letter:', err);
+      sendJson(res, 500, { error: 'Failed to publish letter' });
+      return true;
+    }
+  }
+
+  // 9. GET /api/letter/resolve (Resolve published letter by shareCode)
+  // Also supports /api/l/:code and /api/letter/:code
+  if (
+    (pathname === '/api/letter/resolve' ||
+      pathname.startsWith('/api/l/') ||
+      pathname.startsWith('/api/letter/')) &&
+    method === 'GET'
+  ) {
+    let code = url.searchParams.get('code') || url.searchParams.get('id') || '';
+    if (!code) {
+      if (pathname.startsWith('/api/l/')) {
+        code = pathname.replace('/api/l/', '');
+      } else if (pathname.startsWith('/api/letter/')) {
+        code = pathname.replace('/api/letter/', '');
+      }
+    }
+
+    if (!code) {
+      sendJson(res, 400, { error: 'Missing share code' });
+      return true;
+    }
+
+    const record = sharedLettersByCode.get(code);
+    if (!record) {
+      sendJson(res, 404, { error: 'Letter not found' });
+      return true;
+    }
+
+    record.views++;
+    sendJson(res, 200, {
+      success: true,
+      shareCode: record.shareCode,
+      letter: record.letter
+    });
+    return true;
+  }
+
+  // 10. POST /api/letter/publish-folio (Legacy compatibility)
   if (pathname === '/api/letter/publish-folio' && method === 'POST') {
     if (!verifyWorkspaceAuth()) {
       sendJson(res, 401, { error: 'Unauthorized' });
@@ -553,7 +730,6 @@ export async function handleApiRequest(
       return true;
     }
 
-    // Only allow publishing memories owned by this workspace
     const validIds: string[] = [];
     for (const memId of memoryIds) {
       const mem = memories.get(memId);

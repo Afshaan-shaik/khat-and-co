@@ -54,12 +54,13 @@ if (typeof window !== 'undefined') {
 const APP_SECTION_HASHES = new Set(['#studio', '#shelf', '#nudge', '#top', '#step1', '#step2', '#step3', '#write']);
 
 /**
- * Checks whether a given hash and search query represent an actual letter share link.
+ * Checks whether a given hash, search query, or pathname represents an actual letter share link.
  * Prevents section navigation anchors like #studio or #shelf from being misidentified.
  */
-function isLetterShareUrl(hash: string, search: string): boolean {
-  if (search.includes('id=') || search.includes('l=')) return true;
-  if (hash.startsWith('#l=') || hash.startsWith('#letter=') || hash.startsWith('#id=')) return true;
+function isLetterShareUrl(hash: string, search: string, pathname: string = ''): boolean {
+  if (pathname && /^\/(?:l|letter)\/[a-zA-Z0-9_-]+/.test(pathname)) return true;
+  if (search.includes('id=') || search.includes('l=') || search.includes('code=')) return true;
+  if (hash.startsWith('#l=') || hash.startsWith('#letter=') || hash.startsWith('#id=') || hash.startsWith('#code=')) return true;
   if (hash.length > 25 && !APP_SECTION_HASHES.has(hash)) return true;
   return false;
 }
@@ -69,7 +70,11 @@ function isLetterShareUrl(hash: string, search: string): boolean {
  */
 function hasIncomingShare(): boolean {
   if (typeof window === 'undefined') return false;
-  return isLetterShareUrl(window.location.hash || '', window.location.search || '');
+  return isLetterShareUrl(
+    window.location.hash || '',
+    window.location.search || '',
+    window.location.pathname || ''
+  );
 }
 
 /**
@@ -79,7 +84,8 @@ function getInitialRecipientLetter(): LetterData | null {
   if (typeof window === 'undefined') return null;
   const hash = window.location.hash || '';
   const search = window.location.search || '';
-  if (!isLetterShareUrl(hash, search)) return null;
+  const pathname = window.location.pathname || '';
+  if (!isLetterShareUrl(hash, search, pathname)) return null;
   if (hash.startsWith('#l=') || (hash.length > 25 && !APP_SECTION_HASHES.has(hash))) {
     try {
       return decodeLetterFromHash(hash);
@@ -174,8 +180,9 @@ export const App: React.FC = () => {
     const checkShared = async () => {
       const hash = window.location.hash || '';
       const search = window.location.search || '';
+      const pathname = window.location.pathname || '';
 
-      if (!isLetterShareUrl(hash, search)) {
+      if (!isLetterShareUrl(hash, search, pathname)) {
         setIsRecipientFlow(false);
         setSharedLetterError(false);
         setIsLoadingSharedLetter(false);
@@ -186,7 +193,7 @@ export const App: React.FC = () => {
       setSharedLetterError(false);
 
       try {
-        const decoded = await resolveSharedLetter(hash, search);
+        const decoded = await resolveSharedLetter(hash, search, pathname);
         if (cancelled) return;
 
         if (decoded) {
@@ -207,9 +214,11 @@ export const App: React.FC = () => {
 
     checkShared();
     window.addEventListener('hashchange', checkShared);
+    window.addEventListener('popstate', checkShared);
     return () => {
       cancelled = true;
       window.removeEventListener('hashchange', checkShared);
+      window.removeEventListener('popstate', checkShared);
     };
   }, []);
 
@@ -355,7 +364,7 @@ export const App: React.FC = () => {
     setLetter(replyLetter);
     saveDraft(replyLetter);
 
-    window.history.replaceState(null, '', window.location.pathname);
+    window.history.replaceState(null, '', '/');
     setIsRecipientFlow(false);
     setRecipientLetter(null);
     setIsReaderOpen(false);
@@ -372,7 +381,7 @@ export const App: React.FC = () => {
     if (isRecipientFlow) {
       setIsRecipientFlow(false);
       setRecipientLetter(null);
-      window.history.replaceState(null, '', window.location.pathname);
+      window.history.replaceState(null, '', '/');
     }
     setIsReaderOpen(false);
     setReaderLetter(null);
@@ -391,7 +400,7 @@ export const App: React.FC = () => {
     if (isRecipientFlow) {
       setIsRecipientFlow(false);
       setRecipientLetter(null);
-      window.history.replaceState(null, '', window.location.pathname);
+      window.history.replaceState(null, '', '/');
     }
   };
 

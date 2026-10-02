@@ -421,8 +421,8 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
                     </div>
                   )}
 
-                  {/* Memory Folio Photographs (when included with letter) */}
-                  {letter?.memoryFolio && letter.memoryFolio.includeInLetter && letter.memoryFolio.items.length > 0 && (
+                  {/* Memory Folio Photographs (automatically attached to letter) */}
+                  {letter?.memoryFolio && letter.memoryFolio.items && letter.memoryFolio.items.length > 0 && (
                     <MemoryFolioDisplay
                       items={letter.memoryFolio.items}
                       onOpenPhoto={(idx) => {

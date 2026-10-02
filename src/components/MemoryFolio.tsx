@@ -33,7 +33,6 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
 
   const { session } = getOrCreateWorkspaceSession();
   const currentItems = folio?.items || [];
-  const includeInLetter = Boolean(folio?.includeInLetter);
 
   // Helper to ensure a folio object exists
   const getEnsuredFolio = (): MemoryFolioData => {
@@ -42,32 +41,15 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
       id: `folio_${Date.now()}`,
       workspaceSessionId: session.id,
       items: [],
-      includeInLetter: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
   };
 
-  const handleToggleInclude = () => {
-    const base = getEnsuredFolio();
-    const updated: MemoryFolioData = {
-      ...base,
-      includeInLetter: !includeInLetter,
-      updatedAt: new Date().toISOString()
-    };
-    onUpdateFolio(updated);
-    sfx.snap();
-    showToast(
-      !includeInLetter
-        ? '✦ Memory Folio will be included in the sealed letter'
-        : '🔒 Memory Folio set to private (will not be shared)'
-    );
-  };
-
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    if (currentItems.length >= 3) {
-      showToast('Maximum 3 photographs allowed per Memory Folio.');
+    if (currentItems.length >= 4) {
+      showToast('Maximum 4 photographs allowed per letter.');
       return;
     }
 
@@ -197,42 +179,10 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
           </button>
         </div>
 
-        {/* Privacy & Sharing Controlled Bar (Part 8 & 9) */}
-        <div className="folio-privacy-card">
-          <div className="folio-privacy-info">
-            <div className="folio-privacy-status">
-              <span className={`folio-privacy-dot ${includeInLetter ? 'shared' : 'private'}`} />
-              <strong className="folio-privacy-label">
-                {includeInLetter ? 'Included in Letter' : 'Private Workspace Keepsake'}
-              </strong>
-            </div>
-            <p className="folio-privacy-explainer">
-              {includeInLetter
-                ? 'These photographs will be tucked into the envelope for your recipient.'
-                : 'Private by default. Unseen by recipient unless toggled on.'}
-            </p>
-          </div>
-
-          <label className="folio-toggle-label">
-            <input
-              type="checkbox"
-              id="folio-include-shared"
-              data-testid="folio-include-shared"
-              className="folio-toggle-input"
-              checked={includeInLetter}
-              onChange={handleToggleInclude}
-            />
-            <span className="folio-toggle-slider" />
-            <span className="folio-toggle-text">
-              {includeInLetter ? 'Include with Letter' : 'Keep Private'}
-            </span>
-          </label>
-        </div>
-
         {/* Collection Size Counter */}
         <div className="folio-counter-row">
           <span className="folio-counter-text">
-            Collection: <strong>{currentItems.length} of 3</strong> photographs
+            Collection: <strong>{currentItems.length} of 4</strong> photographs
           </span>
           <span className="folio-fidelity-badge">
             ✦ 4K Originals Preserved
@@ -353,8 +303,8 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
             );
           })}
 
-          {/* Upload Dropzone / Add Button (if under 3 items) */}
-          {currentItems.length < 3 && !isUploading && (
+          {/* Upload Dropzone / Add Button (if under 4 items) */}
+          {currentItems.length < 4 && !isUploading && (
             <div
               className={`folio-dropzone ${isDragging ? 'dragging' : ''}`}
               onDragOver={(e) => {

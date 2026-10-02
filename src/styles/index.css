@@ -4096,6 +4096,15 @@ footer .container,
   grid-row: span 2;
 }
 
+/* 4 Images: 2 × 2 Refined Editorial Grid */
+.folio-display-grid.layout-4 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.layout-4 .folio-display-frame {
+  aspect-ratio: 4 / 3;
+}
+
 .folio-display-item {
   display: flex;
   flex-direction: column;
@@ -4191,7 +4200,8 @@ footer .container,
 /* Portrait Mode for Mobile Viewports (Part 12) */
 @media (max-width: 640px) {
   .folio-display-grid.layout-2,
-  .folio-display-grid.layout-3 {
+  .folio-display-grid.layout-3,
+  .folio-display-grid.layout-4 {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
   }

@@ -13,7 +13,6 @@ import { copyTextToClipboard } from '../utils/clipboard';
 import { exportLetterAsPdf, exportLetterAsPicture } from '../utils/export';
 import { hasAudioAttachment } from './ReaderModal';
 import { MemoryFolioDisplay } from './MemoryFolioDisplay';
-import { publishLetterMemoryFolio } from '../services/memoryStorage';
 
 interface StudioSectionProps {
   letter: LetterData;
@@ -243,24 +242,10 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
         // Fallback
       }
 
-      // Generate share link
+      // Generate short share link
       createShortShareUrl(letter)
-        .then(async (url) => {
+        .then((url) => {
           setShareUrl(url);
-
-          // If Memory Folio is included, publish the memory items for this letter slug
-          if (
-            letter.memoryFolio &&
-            letter.memoryFolio.includeInLetter &&
-            letter.memoryFolio.items.length > 0
-          ) {
-            const match = url.match(/[?&]id=([^&#]+)/);
-            const slug = match ? decodeURIComponent(match[1]) : '';
-            if (slug) {
-              const memIds = letter.memoryFolio.items.map((m) => m.id);
-              await publishLetterMemoryFolio(slug, memIds).catch(() => {});
-            }
-          }
         })
         .catch(() => {
           const fallback = `${window.location.origin}${window.location.pathname}#l=${encodeLetterToHash(letter)}`;
@@ -275,7 +260,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
   const handleCopyLink = async () => {
     const success = await copyTextToClipboard(shareUrl);
     setIsCopying(true);
-    showToast(success ? '✉️ Letter link copied!' : 'Failed to copy');
+    showToast(success ? 'Link copied.' : 'Failed to copy');
     setTimeout(() => setIsCopying(false), 2000);
   };
 
@@ -1205,6 +1190,26 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   </div>
 
                   <div className="share-actions">
+                    {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+                      <button
+                        className="btn ghost sm"
+                        id="nativeShareBtn"
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.share({
+                              title: letter.sender ? `A letter from ${letter.sender}` : 'A letter for you',
+                              text: 'I wrote you a letter. Break the seal when you’re ready:',
+                              url: shareUrl
+                            });
+                          } catch (_) {
+                            // User cancelled or share dismissed
+                          }
+                        }}
+                      >
+                        Share
+                      </button>
+                    )}
                     <a
                       className="btn ghost sm"
                       id="waBtn"
@@ -1236,7 +1241,7 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
                   </div>
 
                   <p className="hint">
-                    Your letter travels inside the link. Nothing is stored on a server, so keep the link safe.
+                    Your letter is sealed and ready to send.
                   </p>
 
                   <div style={{ marginTop: '28px' }}>
@@ -1311,8 +1316,8 @@ export const StudioSection: React.FC<StudioSectionProps> = ({
               </div>
             )}
 
-            {/* Memory Folio display on export paper (Part 34: only if included) */}
-            {letter.memoryFolio && letter.memoryFolio.includeInLetter && letter.memoryFolio.items.length > 0 && (
+            {/* Memory Folio display on export paper */}
+            {letter.memoryFolio && letter.memoryFolio.items && letter.memoryFolio.items.length > 0 && (
               <MemoryFolioDisplay
                 items={letter.memoryFolio.items}
                 onOpenPhoto={() => {}}

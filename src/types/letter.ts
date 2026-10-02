@@ -70,8 +70,8 @@ export interface MemoryFolioData {
   id: string; // unique folio id, e.g. "folio_12345"
   workspaceSessionId: string;
   letterId?: string;
-  items: MemoryItem[]; // 1 to 3 images
-  includeInLetter: boolean; // default: false (Private by default)
+  items: MemoryItem[]; // 1 to 4 photographs automatically attached to letter
+  includeInLetter?: boolean; // legacy compatibility: attached photos are now always part of the letter
   createdAt: string;
   updatedAt: string;
 }

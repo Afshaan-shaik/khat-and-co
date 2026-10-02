@@ -27,9 +27,9 @@ export function encodeLetterToHash(letter: LetterData): string {
         t: letter.waxSeal.customText || ''
       } : undefined,
       vnu: letter.voiceNoteUrl ? String(letter.voiceNoteUrl) : undefined,
-      mf: (letter.memoryFolio && letter.memoryFolio.includeInLetter && letter.memoryFolio.items.length > 0) ? {
+      mf: (letter.memoryFolio && letter.memoryFolio.items && letter.memoryFolio.items.length > 0) ? {
         inc: 1,
-        it: letter.memoryFolio.items.slice(0, 3).map((item) => ({
+        it: letter.memoryFolio.items.slice(0, 4).map((item) => ({
           id: item.id,
           k: item.storageObjectKey,
           fn: item.originalFilename,
