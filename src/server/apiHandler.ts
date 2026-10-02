@@ -591,6 +591,84 @@ export async function handleApiRequest(
     return true;
   }
 
+async function persistLetterToGlobalCloud(payload: any): Promise<string> {
+  // 1. Try Dpaste (High-availability global JSON paste service, 365-day persistence, CORS-enabled)
+  try {
+    const res = await fetch('https://dpaste.com/api/v2/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        content: JSON.stringify(payload),
+        syntax: 'json',
+        expiry_days: '365'
+      })
+    });
+    if (res.ok) {
+      const url = (await res.text()).trim();
+      const code = url.split('/').filter(Boolean).pop();
+      if (code && code.length >= 4) {
+        return code;
+      }
+    }
+  } catch (err) {
+    console.warn('Dpaste cloud persist error:', err);
+  }
+
+  // 2. Try Bytebin (Fast secondary document storage)
+  try {
+    const res = await fetch('https://bytebin.lucko.me/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.key && typeof data.key === 'string' && data.key.trim().length > 2) {
+        return data.key.trim();
+      }
+    }
+  } catch (err) {
+    console.warn('Bytebin cloud persist error:', err);
+  }
+
+  return '';
+}
+
+async function fetchLetterFromGlobalCloud(code: string): Promise<any | null> {
+  const cleanCode = encodeURIComponent(code.trim());
+
+  // 1. Try Dpaste
+  try {
+    const res = await fetch(`https://dpaste.com/${cleanCode}.txt`);
+    if (res.ok) {
+      const text = await res.text();
+      const data = JSON.parse(text);
+      const letter = data?.letter || data;
+      if (letter && (letter.body || letter.recipient)) {
+        return { letter, contentHash: data.contentHash };
+      }
+    }
+  } catch (_) {
+    // Continue to next provider
+  }
+
+  // 2. Try Bytebin
+  try {
+    const res = await fetch(`https://bytebin.lucko.me/${cleanCode}`);
+    if (res.ok) {
+      const data = await res.json();
+      const letter = data?.letter || data;
+      if (letter && (letter.body || letter.recipient)) {
+        return { letter, contentHash: data.contentHash };
+      }
+    }
+  } catch (_) {
+    // Continue
+  }
+
+  return null;
+}
+
   // 8. POST /api/letter/share (Create canonical short URL for letter)
   if ((pathname === '/api/letter/share' || pathname === '/api/letter/publish') && method === 'POST') {
     try {
@@ -646,35 +724,16 @@ export async function handleApiRequest(
         } : undefined
       };
 
-      // 1. Persist to Bytebin global document store (survives cold starts, multi-container lambdas, all devices)
-      let shareCode = '';
-      try {
-        const bytebinPayload = JSON.stringify({
-          contentHash,
-          letter: recipientLetter,
-          createdAt: new Date().toISOString()
-        });
+      // 1. Persist to Global Cloud Store (Dpaste + Bytebin, survives cold starts, multi-container lambdas, all devices)
+      const cloudPayload = {
+        contentHash,
+        letter: recipientLetter,
+        createdAt: new Date().toISOString()
+      };
 
-        const bRes = await fetch('https://bytebin.lucko.me/post', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'Khath-and-Co'
-          },
-          body: bytebinPayload
-        });
+      let shareCode = await persistLetterToGlobalCloud(cloudPayload);
 
-        if (bRes.ok) {
-          const bData = await bRes.json();
-          if (bData?.key && typeof bData.key === 'string' && bData.key.trim().length > 2) {
-            shareCode = bData.key.trim();
-          }
-        }
-      } catch (bErr) {
-        console.warn('Bytebin persistence notice in /api/letter/share:', bErr);
-      }
-
-      // 2. Fallback: If Bytebin is offline/unreachable, generate unique Base62 code
+      // 2. Fallback: If cloud services are offline, generate unique Base62 code
       if (!shareCode) {
         let attempts = 0;
         let length = 6;
@@ -748,29 +807,21 @@ export async function handleApiRequest(
     // 1. Check in-memory map first
     let record = sharedLettersByCode.get(code);
 
-    // 2. If NOT in memory (fresh lambda container, cold boot, multi-device access), fetch from Bytebin!
+    // 2. If NOT in memory (fresh lambda container, cold boot, multi-device access), fetch from global cloud store!
     if (!record) {
-      try {
-        const bRes = await fetch(`https://bytebin.lucko.me/${encodeURIComponent(code)}`);
-        if (bRes.ok) {
-          const bData = await bRes.json();
-          const loadedLetter = bData?.letter || bData;
-          if (loadedLetter && (loadedLetter.body || loadedLetter.recipient)) {
-            record = {
-              shareCode: code,
-              contentHash: bData.contentHash || '',
-              letter: loadedLetter,
-              createdAt: bData.createdAt || new Date().toISOString(),
-              views: 1
-            };
-            sharedLettersByCode.set(code, record);
-            if (record.contentHash) {
-              sharedCodeByHash.set(record.contentHash, code);
-            }
-          }
+      const cloudRecord = await fetchLetterFromGlobalCloud(code);
+      if (cloudRecord?.letter) {
+        record = {
+          shareCode: code,
+          contentHash: cloudRecord.contentHash || '',
+          letter: cloudRecord.letter,
+          createdAt: new Date().toISOString(),
+          views: 1
+        };
+        sharedLettersByCode.set(code, record);
+        if (record.contentHash) {
+          sharedCodeByHash.set(record.contentHash, code);
         }
-      } catch (err) {
-        console.warn(`Bytebin resolve error for ${code}:`, err);
       }
     }
 

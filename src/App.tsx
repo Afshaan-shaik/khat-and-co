@@ -173,54 +173,55 @@ export const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, [letter]);
 
-  // Check URL Hash & Search Query for shared letter
-  useEffect(() => {
-    let cancelled = false;
+  // Check URL Hash & Search Query for shared letter with resilient auto-retry
+  const checkShared = useCallback(async () => {
+    const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const pathname = window.location.pathname || '';
 
-    const checkShared = async () => {
-      const hash = window.location.hash || '';
-      const search = window.location.search || '';
-      const pathname = window.location.pathname || '';
-
-      if (!isLetterShareUrl(hash, search, pathname)) {
-        setIsRecipientFlow(false);
-        setSharedLetterError(false);
-        setIsLoadingSharedLetter(false);
-        return;
-      }
-
-      setIsLoadingSharedLetter(true);
+    if (!isLetterShareUrl(hash, search, pathname)) {
+      setIsRecipientFlow(false);
       setSharedLetterError(false);
+      setIsLoadingSharedLetter(false);
+      return;
+    }
 
-      try {
-        const decoded = await resolveSharedLetter(hash, search, pathname);
-        if (cancelled) return;
+    setIsLoadingSharedLetter(true);
+    setSharedLetterError(false);
 
-        if (decoded) {
-          setRecipientLetter(decoded);
-          setIsRecipientFlow(true);
-          setIsLoadingSharedLetter(false);
-        } else {
-          setIsLoadingSharedLetter(false);
-          setSharedLetterError(true);
-        }
-      } catch {
-        if (!cancelled) {
-          setIsLoadingSharedLetter(false);
-          setSharedLetterError(true);
-        }
+    try {
+      let decoded = await resolveSharedLetter(hash, search, pathname);
+
+      // Auto-retry once with backoff in case of cellular jitter / cold container
+      if (!decoded) {
+        await new Promise((r) => setTimeout(r, 800));
+        decoded = await resolveSharedLetter(hash, search, pathname);
       }
-    };
 
+      if (decoded) {
+        setRecipientLetter(decoded);
+        setIsRecipientFlow(true);
+        setIsLoadingSharedLetter(false);
+        setSharedLetterError(false);
+      } else {
+        setIsLoadingSharedLetter(false);
+        setSharedLetterError(true);
+      }
+    } catch {
+      setIsLoadingSharedLetter(false);
+      setSharedLetterError(true);
+    }
+  }, []);
+
+  useEffect(() => {
     checkShared();
     window.addEventListener('hashchange', checkShared);
     window.addEventListener('popstate', checkShared);
     return () => {
-      cancelled = true;
       window.removeEventListener('hashchange', checkShared);
       window.removeEventListener('popstate', checkShared);
     };
-  }, []);
+  }, [checkShared]);
 
   // Handlers for Letter Updates
   const handleUpdateLetter = (updatedFields: Partial<LetterData>) => {
@@ -428,6 +429,7 @@ export const App: React.FC = () => {
             isPeek={false}
             isLoading={isLoadingSharedLetter}
             loadError={sharedLetterError}
+            onRetry={checkShared}
           />
           {toastMessage && (
             <div className="khat-toast" role="status" aria-live="polite">

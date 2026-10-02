@@ -12,6 +12,7 @@ interface EnvelopeModalProps {
   isRecipientFlow?: boolean; // opened via shared URL
   isLoadingLetter?: boolean;
   loadError?: boolean;
+  onRetry?: () => void;
 }
 
 export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
@@ -21,7 +22,8 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
   onWriteBack,
   isRecipientFlow = false,
   isLoadingLetter = false,
-  loadError = false
+  loadError = false,
+  onRetry
 }) => {
   const [isOpening, setIsOpening] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
@@ -393,9 +395,22 @@ export const EnvelopeModal: React.FC<EnvelopeModalProps> = ({
           {/* Help hint */}
           <div className="text-center mt-3">
             {loadError ? (
-              <span className="small text-danger opacity-90 font-sans">
-                This letter link might be invalid or expired.
-              </span>
+              <div>
+                <span className="small text-danger opacity-90 font-sans d-block">
+                  This letter link might be invalid or loading timed out.
+                </span>
+                {onRetry && (
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-link text-white-50 text-decoration-underline mt-1 p-0"
+                    onClick={onRetry}
+                    style={{ fontSize: '13px', cursor: 'pointer', border: 'none', background: 'none' }}
+                    data-testid="envelope-retry-btn"
+                  >
+                    Tap here to retry loading · दोबारा प्रयास करें
+                  </button>
+                )}
+              </div>
             ) : (() => {
               const seal = resolveWaxSeal(letter);
               const isHeart = seal.id === 'heart' || seal.symbol === '♡';

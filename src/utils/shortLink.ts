@@ -4,6 +4,7 @@ import { sanitizeLoadedLetter } from './storage';
 import { getWorkspaceAuthHeaders } from '../services/session';
 import { isSupabaseConfigured, saveLetterToDatabase, getLetterFromSupabase } from '../services/supabase';
 
+const DPASTE_ENDPOINT = 'https://dpaste.com';
 const BYTEBIN_ENDPOINT = 'https://bytebin.lucko.me';
 
 /**
@@ -47,7 +48,36 @@ export async function createShortShareUrl(letter: LetterData): Promise<string> {
     console.warn('Primary /api/letter/share failed, evaluating fallbacks:', err);
   }
 
-  // 2. Supabase fallback (Database + Storage)
+  // 2. Direct Cloud Fallback: Dpaste (Global, 365-day persistence, CORS-enabled)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(`${DPASTE_ENDPOINT}/api/v2/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        content: JSON.stringify({ letter, createdAt: new Date().toISOString() }),
+        syntax: 'json',
+        expiry_days: '365'
+      }),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const url = (await res.text()).trim();
+      const code = url.split('/').filter(Boolean).pop();
+      if (code && code.length >= 4) {
+        return `${origin}/l/${code}`;
+      }
+    }
+  } catch (err) {
+    console.warn('Direct Dpaste fallback failed:', err);
+  }
+
+  // 3. Supabase fallback (Database + Storage)
   if (isSupabaseConfigured()) {
     try {
       const result = await saveLetterToDatabase(letter);
@@ -59,7 +89,7 @@ export async function createShortShareUrl(letter: LetterData): Promise<string> {
     }
   }
 
-  // 3. Temporary storage fallback (Bytebin)
+  // 4. Temporary storage fallback (Bytebin)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
@@ -86,7 +116,7 @@ export async function createShortShareUrl(letter: LetterData): Promise<string> {
     console.warn('Bytebin fallback failed, falling back to standalone hash URL:', err);
   }
 
-  // 4. Standalone compressed URL hash fallback (Preserves legacy support without breaking)
+  // 5. Standalone compressed URL hash fallback (Preserves legacy support without breaking)
   const encoded = encodeLetterToHash(letter);
   return `${origin}/#l=${encoded}`;
 }
@@ -194,7 +224,30 @@ export async function fetchLetterByShareCode(code: string): Promise<LetterData |
     console.warn(`Server resolve failed for share code "${cleanCode}":`, err);
   }
 
-  // 2. Check Bytebin direct (Crucial for cold lambdas or multi-device WhatsApp links)
+  // 2. Check Dpaste direct (High-availability global storage with CORS support)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(`${DPASTE_ENDPOINT}/${encodeURIComponent(cleanCode)}.txt`, {
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const text = await res.text();
+      const data = JSON.parse(text);
+      const letter = data?.letter || data;
+      if (letter && (letter.body || letter.recipient)) {
+        return sanitizeLoadedLetter(letter);
+      }
+    }
+  } catch (err) {
+    console.warn(`Direct Dpaste resolve notice for "${cleanCode}":`, err);
+  }
+
+  // 3. Check Bytebin direct (Crucial for cold lambdas or multi-device WhatsApp links)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 6000);
@@ -216,7 +269,7 @@ export async function fetchLetterByShareCode(code: string): Promise<LetterData |
     console.warn(`Failed to fetch letter by short id "${cleanCode}":`, err);
   }
 
-  // 3. Check Supabase
+  // 4. Check Supabase
   if (isSupabaseConfigured()) {
     try {
       const fromSupabase = await getLetterFromSupabase(cleanCode);

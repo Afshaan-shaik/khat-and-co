@@ -17,6 +17,7 @@ interface ReaderModalProps {
   isPeek?: boolean;
   isLoading?: boolean;
   loadError?: boolean;
+  onRetry?: () => void;
 }
 
 /**
@@ -39,7 +40,8 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
   onWriteBack,
   isPeek = false,
   isLoading = false,
-  loadError = false
+  loadError = false,
+  onRetry
 }) => {
   const [stageState, setStageState] = useState<'sealed' | 'opening' | 'opened'>('sealed');
   const [passphraseInput, setPassphraseInput] = useState('');
@@ -111,7 +113,10 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
 
   const handleSealClick = () => {
     if (stageState !== 'sealed') return;
-    if (loadError) return;
+    if (loadError) {
+      if (onRetry) onRetry();
+      return;
+    }
 
     if (isLocked) {
       setIsShaking(true);
@@ -322,7 +327,20 @@ export const ReaderModal: React.FC<ReaderModalProps> = ({
 
             <div className="reader-msg" aria-live="polite">
               {loadError ? (
-                'Unable to load letter · खत नहीं मिला'
+                <div>
+                  <div>Unable to load letter · खत नहीं मिला</div>
+                  {onRetry && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-link text-white-50 text-decoration-underline mt-2 p-0"
+                      onClick={onRetry}
+                      style={{ fontSize: '13px', cursor: 'pointer', border: 'none', background: 'none' }}
+                      data-testid="reader-retry-btn"
+                    >
+                      Tap here or tap seal to retry · पुनः प्रयास करें
+                    </button>
+                  )}
+                </div>
               ) : isLoading && !letter ? (
                 'Receiving sealed letter...'
               ) : isLocked ? (
