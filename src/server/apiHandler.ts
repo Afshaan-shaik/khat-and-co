@@ -109,6 +109,18 @@ function parseImageDimensions(buffer: Buffer): { width: number; height: number }
 
 // Helper to parse JSON body
 function parseJsonBody(req: IncomingMessage): Promise<any> {
+  if ((req as any).body) {
+    if (typeof (req as any).body === 'object') {
+      return Promise.resolve((req as any).body);
+    }
+    if (typeof (req as any).body === 'string') {
+      try {
+        return Promise.resolve(JSON.parse((req as any).body));
+      } catch (err) {
+        return Promise.reject(err);
+      }
+    }
+  }
   return new Promise((resolve, reject) => {
     let data = '';
     req.on('data', (chunk: Buffer | string) => {
@@ -130,7 +142,12 @@ function parseJsonBody(req: IncomingMessage): Promise<any> {
   });
 }
 
-function sendJson(res: ServerResponse, status: number, body: any) {
+function sendJson(res: ServerResponse | any, status: number, body: any) {
+  if (typeof res.status === 'function' && typeof res.json === 'function') {
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.status(status).json(body);
+  }
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Cache-Control': 'private, no-cache, no-store, must-revalidate',
@@ -149,7 +166,8 @@ export async function handleApiRequest(
 ): Promise<boolean> {
   const method = req.method?.toUpperCase() || 'GET';
   const url = new URL(urlPath, 'http://localhost');
-  const pathname = url.pathname.replace(/\/$/, '');
+  const rawPath = url.pathname.replace(/\/$/, '');
+  const pathname = rawPath.startsWith('/api') ? rawPath : `/api${rawPath}`;
 
   // Extract Session Headers
   const sessionId = (req.headers['x-workspace-session-id'] as string) || '';
@@ -179,26 +197,32 @@ export async function handleApiRequest(
     return true;
   }
 
-  // 1. POST /api/session (Session Heartbeat / Registration)
-  if (pathname === '/api/session' && method === 'POST') {
-    const body = await parseJsonBody(req).catch(() => ({}));
-    const reqId = body.id || sessionId;
-    const reqToken = body.token || sessionToken;
-
-    if (!reqId || !reqToken || !reqId.startsWith('ws_') || !reqToken.startsWith('wst_')) {
-      sendJson(res, 400, { error: 'Invalid workspace session parameters' });
+  // 1. /api/session (Session Heartbeat / Registration)
+  if (pathname === '/api/session') {
+    if (method === 'GET') {
+      sendJson(res, 200, { status: 'active', service: 'Khath & Co. Workspace Session API' });
       return true;
     }
+    if (method === 'POST') {
+      const body = await parseJsonBody(req).catch(() => ({}));
+      const reqId = body.id || sessionId;
+      const reqToken = body.token || sessionToken;
 
-    sessions.set(reqId, {
-      id: reqId,
-      token: reqToken,
-      createdAt: new Date().toISOString(),
-      lastActiveAt: new Date().toISOString()
-    });
+      if (!reqId || !reqToken || !reqId.startsWith('ws_') || !reqToken.startsWith('wst_')) {
+        sendJson(res, 400, { error: 'Invalid workspace session parameters' });
+        return true;
+      }
 
-    sendJson(res, 200, { status: 'active', sessionId: reqId });
-    return true;
+      sessions.set(reqId, {
+        id: reqId,
+        token: reqToken,
+        createdAt: new Date().toISOString(),
+        lastActiveAt: new Date().toISOString()
+      });
+
+      sendJson(res, 200, { status: 'active', sessionId: reqId });
+      return true;
+    }
   }
 
   // 2. POST /api/memory/upload-auth

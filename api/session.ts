@@ -2,8 +2,8 @@ import { handleApiRequest } from '../src/server/apiHandler';
 
 export default async function handler(req: any, res: any) {
   try {
-    const url = req.url || '';
-    const handled = await handleApiRequest(req, res, url);
+    const url = req.url || '/api/session';
+    const handled = await handleApiRequest(req, res, url.startsWith('/api') ? url : `/api${url}`);
     if (!handled) {
       if (typeof res.status === 'function') {
         return res.status(404).json({ error: 'Endpoint not found' });
@@ -13,7 +13,7 @@ export default async function handler(req: any, res: any) {
       res.end(JSON.stringify({ error: 'Endpoint not found' }));
     }
   } catch (err: any) {
-    console.error('API Error in /api/[...path]:', err);
+    console.error('API Error in /api/session:', err);
     if (typeof res.status === 'function') {
       return res.status(500).json({ error: err?.message || 'Internal Server Error' });
     }
