@@ -48,12 +48,15 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    if (currentItems.length >= 4) {
-      showToast('Maximum 4 photographs allowed per letter.');
+    if (isUploading) return; // Prevent double-tap or overlapping uploads
+
+    const availableSlots = 4 - currentItems.length;
+    if (availableSlots <= 0) {
+      showToast('Collection limit reached (maximum 4 photographs allowed per letter).');
       return;
     }
 
-    const file = files[0];
+    const filesToUpload = Array.from(files).slice(0, availableSlots);
     setIsUploading(true);
     setUploadProgress(5);
     setUploadError(null);
@@ -63,13 +66,25 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
 
     try {
       sfx.rustle();
-      const uploadedItem = await uploadPhotograph(file, {
-        onProgress: (p) => setUploadProgress(p),
-        signal: controller.signal
-      });
-
       const base = getEnsuredFolio();
-      const updatedItems = [...base.items, uploadedItem];
+      const newItems: MemoryItem[] = [];
+
+      for (let i = 0; i < filesToUpload.length; i++) {
+        const file = filesToUpload[i];
+        const stepBase = (i / filesToUpload.length) * 100;
+        const stepSpan = 100 / filesToUpload.length;
+
+        const uploadedItem = await uploadPhotograph(file, {
+          onProgress: (p) => {
+            const overall = Math.round(stepBase + (p / 100) * stepSpan);
+            setUploadProgress(overall);
+          },
+          signal: controller.signal
+        });
+        newItems.push(uploadedItem);
+      }
+
+      const updatedItems = [...base.items, ...newItems].slice(0, 4);
       const updatedFolio: MemoryFolioData = {
         ...base,
         items: updatedItems,
@@ -80,18 +95,37 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
       setIsUploading(false);
       setUploadProgress(0);
       sfx.snap();
+
+      const lastItem = newItems[newItems.length - 1];
       showToast(
-        uploadedItem.is4K
+        lastItem?.is4K
           ? '✦ 4K Ultra HD photograph preserved and added to folio'
           : '✦ Photograph preserved and added to folio'
       );
     } catch (err: any) {
-      if (err.message === 'Upload cancelled') {
+      const rawMessage = (err && (err.message || (typeof err === 'string' ? err : ''))) || '';
+      console.error('Photo upload technical error:', err);
+
+      if (rawMessage === 'Upload cancelled' || controller.signal.aborted) {
         showToast('Upload cancelled.');
+        setUploadError(null);
       } else {
-        console.error('Photo upload error:', err);
-        setUploadError(err.message || 'Failed to upload photograph');
-        showToast(err.message || 'Failed to upload photograph');
+        let friendlyMessage = "Upload couldn't be completed. Please try again.";
+        const lower = rawMessage.toLowerCase();
+        if (lower.includes('format') || lower.includes('unsupported') || lower.includes('signature')) {
+          friendlyMessage = 'Unsupported image format. Please select a photograph (JPEG, PNG, WebP, GIF, BMP, HEIC, or AVIF).';
+        } else if (lower.includes('limit') || lower.includes('maximum 4')) {
+          friendlyMessage = 'Collection limit reached (maximum 4 photographs allowed per letter).';
+        } else if (lower.includes('size') || lower.includes('40mb') || lower.includes('50mb') || lower.includes('large') || lower.includes('413')) {
+          friendlyMessage = 'Photograph exceeds size limit. Please choose a photograph under 50MB.';
+        } else if (lower.includes('network') || lower.includes('failed to fetch')) {
+          friendlyMessage = 'Network connection issue. Please check your connection and try again.';
+        } else if (rawMessage && !lower.includes('failed to upload photograph')) {
+          friendlyMessage = rawMessage;
+        }
+
+        setUploadError(friendlyMessage);
+        showToast(friendlyMessage);
       }
       setIsUploading(false);
       setUploadProgress(0);
@@ -379,9 +413,13 @@ export const MemoryFolio: React.FC<MemoryFolioProps> = ({
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          multiple
+          accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif"
           style={{ display: 'none' }}
-          onChange={(e) => handleFileSelect(e.target.files)}
+          onChange={(e) => {
+            const files = e.target.files;
+            handleFileSelect(files);
+          }}
         />
 
         {/* Footer Info */}

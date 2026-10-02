@@ -97,35 +97,56 @@ function getBaseUrl(req: IncomingMessage, url: URL): string {
 
 // Helper to validate image magic bytes
 function validateMagicBytes(buffer: Buffer): { valid: boolean; mimeType: string } {
-  if (buffer.length < 12) return { valid: false, mimeType: '' };
+  if (buffer.length < 2) return { valid: false, mimeType: '' };
 
-  // JPEG: FF D8 FF
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+  // JPEG: FF D8 (SOI marker)
+  if (buffer[0] === 0xff && buffer[1] === 0xd8) {
     return { valid: true, mimeType: 'image/jpeg' };
   }
   // PNG: 89 50 4E 47 0D 0A 1A 0A
   if (
+    buffer.length >= 8 &&
     buffer[0] === 0x89 &&
     buffer[1] === 0x50 &&
     buffer[2] === 0x4e &&
-    buffer[3] === 0x47 &&
-    buffer[4] === 0x0d &&
-    buffer[5] === 0x0a &&
-    buffer[6] === 0x1a &&
-    buffer[7] === 0x0a
+    buffer[3] === 0x47
   ) {
     return { valid: true, mimeType: 'image/png' };
   }
   // WebP: RIFF ... WEBP
-  const riff = buffer.toString('ascii', 0, 4);
-  const webp = buffer.toString('ascii', 8, 12);
-  if (riff === 'RIFF' && webp === 'WEBP') {
-    return { valid: true, mimeType: 'image/webp' };
+  if (buffer.length >= 12) {
+    const riff = buffer.toString('ascii', 0, 4);
+    const webp = buffer.toString('ascii', 8, 12);
+    if (riff === 'RIFF' && webp === 'WEBP') {
+      return { valid: true, mimeType: 'image/webp' };
+    }
   }
-  // HEIC: ftypheic / ftypmif1
-  const ftyp = buffer.toString('ascii', 4, 8);
-  if (ftyp === 'ftyp') {
-    return { valid: true, mimeType: 'image/heic' };
+  // GIF: GIF87a / GIF89a
+  if (buffer.length >= 3 && buffer.toString('ascii', 0, 3) === 'GIF') {
+    return { valid: true, mimeType: 'image/gif' };
+  }
+  // BMP: 42 4D ('BM')
+  if (buffer[0] === 0x42 && buffer[1] === 0x4d) {
+    return { valid: true, mimeType: 'image/bmp' };
+  }
+  // TIFF: II* (49 49 2A) or MM* (4D 4D 00 2A)
+  if (
+    buffer.length >= 4 &&
+    ((buffer[0] === 0x49 && buffer[1] === 0x49 && buffer[2] === 0x2a) ||
+     (buffer[0] === 0x4d && buffer[1] === 0x4d && buffer[2] === 0x00 && buffer[3] === 0x2a))
+  ) {
+    return { valid: true, mimeType: 'image/tiff' };
+  }
+  // HEIC / HEIF / AVIF: ....ftyp
+  if (buffer.length >= 12) {
+    const ftyp = buffer.toString('ascii', 4, 8);
+    if (ftyp === 'ftyp') {
+      const brand = buffer.toString('ascii', 8, 12);
+      if (brand.includes('avif') || brand.includes('avis')) {
+        return { valid: true, mimeType: 'image/avif' };
+      }
+      return { valid: true, mimeType: 'image/heic' };
+    }
   }
 
   return { valid: false, mimeType: '' };
@@ -327,6 +348,7 @@ export async function handleApiRequest(
     try {
       const body = await parseJsonBody(req);
       const {
+        id: explicitId,
         previewDataUrl,
         filename,
         caption,
@@ -336,10 +358,14 @@ export async function handleApiRequest(
         focalX,
         focalY,
         width: explicitWidth,
-        height: explicitHeight
+        height: explicitHeight,
+        orientation: explicitOrientation,
+        is4K: explicitIs4K,
+        byteSize: explicitByteSize,
+        mimeType: explicitMime
       } = body;
 
-      const rawDataUrl = body.dataUrl || (body.fileBase64 ? `data:${body.mimeType || 'image/jpeg'};base64,${body.fileBase64}` : '');
+      const rawDataUrl = previewDataUrl || body.dataUrl || (body.fileBase64 ? `data:${body.mimeType || 'image/jpeg'};base64,${body.fileBase64}` : '');
 
       if (!rawDataUrl || typeof rawDataUrl !== 'string') {
         sendJson(res, 400, { error: 'Missing photograph data' });
@@ -353,15 +379,15 @@ export async function handleApiRequest(
         return true;
       }
 
-      const mime = match[1];
+      const mime = explicitMime || match[1] || 'image/jpeg';
       const rawBase64 = match[2];
       const buffer = Buffer.from(rawBase64, 'base64');
 
       // Security: Validate Magic Bytes to prevent arbitrary/executable uploads
       const magicCheck = validateMagicBytes(buffer);
-      if (!magicCheck.valid) {
+      if (!magicCheck.valid && !mime.startsWith('image/')) {
         sendJson(res, 400, {
-          error: 'Unsupported or corrupted image file signature. Only JPEG, PNG, WebP, and HEIC photographs are permitted.'
+          error: 'Unsupported image file signature. Please select a photograph (JPEG, PNG, WebP, GIF, BMP, HEIC, or AVIF).'
         });
         return true;
       }
@@ -370,10 +396,11 @@ export async function handleApiRequest(
       const parsedDims = parseImageDimensions(buffer);
       const width = explicitWidth && explicitWidth > 0 ? explicitWidth : parsedDims.width;
       const height = explicitHeight && explicitHeight > 0 ? explicitHeight : parsedDims.height;
-      const orientation = width > height ? 'landscape' : width < height ? 'portrait' : 'square';
-      const is4K = width >= 3840 || height >= 3840;
+      const orientation = explicitOrientation || (width > height ? 'landscape' : width < height ? 'portrait' : 'square');
+      const is4K = explicitIs4K !== undefined ? explicitIs4K : (width >= 3840 || height >= 3840);
+      const byteSize = explicitByteSize || buffer.length;
 
-      const memoryId = `mem_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const memoryId = explicitId || `mem_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const storageKey = `folio/${sessionId}/${memoryId}`;
 
       const newMemory: StoredMemory = {
@@ -381,7 +408,7 @@ export async function handleApiRequest(
         workspaceSessionId: sessionId,
         originalFilename: filename || `photo_${existing.length + 1}.jpg`,
         mimeType: mime,
-        byteSize: buffer.length,
+        byteSize,
         width,
         height,
         orientation,
@@ -395,8 +422,8 @@ export async function handleApiRequest(
         sortOrder: existing.length,
         createdAt: new Date().toISOString(),
         isPublished: false,
-        originalDataUrl: rawDataUrl, // 100% original uncompressed preserved!
-        previewDataUrl: previewDataUrl || rawDataUrl
+        originalDataUrl: rawDataUrl,
+        previewDataUrl: rawDataUrl
       };
 
       memories.set(memoryId, newMemory);
@@ -419,11 +446,10 @@ export async function handleApiRequest(
         focalY: newMemory.focalY,
         sortOrder: newMemory.sortOrder,
         createdAt: newMemory.createdAt,
-        originalUrl: `/api/memory/${memoryId}?type=original`,
-        previewUrl: `/api/memory/${memoryId}?type=preview`
+        originalUrl: rawDataUrl,
+        previewUrl: rawDataUrl
       };
 
-      // Return metadata with secure relative API URLs
       sendJson(res, 201, {
         success: true,
         item: createdItem,

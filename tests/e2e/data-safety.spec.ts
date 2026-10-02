@@ -126,8 +126,8 @@ test.describe('Data Safety & Persistence Suite', () => {
   test('resolves and opens short link (?id=...) strictly closed with sealed wax first, concealing letter until tapped', async ({ page }) => {
     const verifyErrors = attachErrorListeners(page);
 
-    // Mock bytebin request for offline deterministic e2e test
-    await page.route('**/testShort123', async (route) => {
+    // Mock short link resolve and bytebin request without intercepting main document navigation
+    await page.route((url) => url.pathname.endsWith('/testShort123') || url.pathname.includes('/api/letter/resolve'), async (route) => {
       await route.fulfill({
         status: 200,
         headers: {
@@ -187,7 +187,7 @@ test.describe('Data Safety & Persistence Suite', () => {
     // Emulate reduced motion
     await page.emulateMedia({ reducedMotion: 'reduce' });
 
-    await page.route('**/testMotion123', async (route) => {
+    await page.route((url) => url.pathname.endsWith('/testMotion123') || url.pathname.includes('/api/letter/resolve'), async (route) => {
       await route.fulfill({
         status: 200,
         headers: {

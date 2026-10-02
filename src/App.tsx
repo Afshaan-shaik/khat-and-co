@@ -165,12 +165,17 @@ export const App: React.FC = () => {
     }, 3800);
   }, []);
 
-  // Autosave draft to localStorage (debounced)
+  // Autosave draft to sessionStorage/localStorage (immediate + beforeunload sync)
   useEffect(() => {
-    const timer = setTimeout(() => {
+    saveDraft(letter);
+    const handleBeforeUnload = () => {
       saveDraft(letter);
-    }, 350);
-    return () => clearTimeout(timer);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      saveDraft(letter);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [letter]);
 
   // Check URL Hash & Search Query for shared letter with resilient auto-retry

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { MemoryItem } from '../types/letter';
 import { sfx } from '../utils/sound';
+import { getOriginalImageBlob } from '../utils/indexedDb';
 
 interface PhotoViewerProps {
   isOpen: boolean;
@@ -108,19 +109,39 @@ export const PhotoViewer: React.FC<PhotoViewerProps> = ({
     setIsPanning(false);
   };
 
-  const handleDownloadOriginal = () => {
+  const handleDownloadOriginal = async () => {
     if (!currentItem) return;
-    const downloadUrl = currentItem.originalUrl || currentItem.previewUrl;
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = currentItem.originalFilename || `memory-original-${currentIndex + 1}.jpg`;
-    link.rel = 'noopener noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    setTimeout(() => {
-      if (document.body.contains(link)) document.body.removeChild(link);
-    }, 1000);
-    sfx.snap();
+    try {
+      const blob = await getOriginalImageBlob(currentItem.id);
+      let downloadUrl = currentItem.originalUrl || currentItem.previewUrl;
+      let cleanupBlobUrl: string | null = null;
+      if (blob) {
+        downloadUrl = URL.createObjectURL(blob);
+        cleanupBlobUrl = downloadUrl;
+      }
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = currentItem.originalFilename || `memory-original-${currentIndex + 1}.jpg`;
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        if (document.body.contains(link)) document.body.removeChild(link);
+        if (cleanupBlobUrl) URL.revokeObjectURL(cleanupBlobUrl);
+      }, 1000);
+      sfx.snap();
+    } catch {
+      const downloadUrl = currentItem.originalUrl || currentItem.previewUrl;
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = currentItem.originalFilename || `memory-original-${currentIndex + 1}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        if (document.body.contains(link)) document.body.removeChild(link);
+      }, 1000);
+      sfx.snap();
+    }
   };
 
   if (!isOpen || !currentItem) return null;

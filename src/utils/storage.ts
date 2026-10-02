@@ -149,6 +149,26 @@ export function loadSavedDraft(explicitSessionId?: string): LetterData {
       }
     }
 
+    // Fallback: Check legacy localStorage draft for backward compatibility
+    if (typeof window !== 'undefined' && window.localStorage) {
+      try {
+        const legacyRaw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (legacyRaw) {
+          const parsed = JSON.parse(legacyRaw);
+          const restored = sanitizeLoadedLetter({
+            ...parsed,
+            workspaceSessionId: effectiveSessionId
+          });
+          if (window.sessionStorage) {
+            try {
+              window.sessionStorage.setItem(sessionKey, JSON.stringify(restored));
+            } catch {}
+          }
+          return restored;
+        }
+      } catch {}
+    }
+
     // Fresh workspace session starts with a clean slate
     const freshLetter = createDefaultLetter();
     freshLetter.workspaceSessionId = effectiveSessionId;
@@ -168,13 +188,55 @@ export function saveDraft(letter: LetterData, explicitSessionId?: string): void 
     const effectiveSessionId = explicitSessionId || letter.workspaceSessionId || session.id;
     const sessionKey = `khath:workspace_draft:${effectiveSessionId}`;
 
+    // Compact draft representation: ensure memory items don't blow quota
+    let sanitizedFolio = letter.memoryFolio;
+    if (letter.memoryFolio && Array.isArray(letter.memoryFolio.items)) {
+      sanitizedFolio = {
+        ...letter.memoryFolio,
+        items: letter.memoryFolio.items.map((item) => ({
+          ...item,
+          // If originalUrl is a huge dataUrl, prefer previewUrl or keep within reasonable size
+          originalUrl: (item.originalUrl && item.originalUrl.length > 500000) ? (item.previewUrl || '') : item.originalUrl
+        }))
+      };
+    }
+
     const letterToSave: LetterData = {
       ...letter,
+      memoryFolio: sanitizedFolio,
       workspaceSessionId: effectiveSessionId
     };
 
     if (typeof window !== 'undefined' && window.sessionStorage) {
-      window.sessionStorage.setItem(sessionKey, JSON.stringify(letterToSave));
+      try {
+        window.sessionStorage.setItem(sessionKey, JSON.stringify(letterToSave));
+      } catch (quotaErr) {
+        // If quota exceeded, try saving with minimal photo references
+        try {
+          const minimalDraft = {
+            ...letterToSave,
+            memoryFolio: sanitizedFolio ? {
+              ...sanitizedFolio,
+              items: sanitizedFolio.items.map((m) => ({
+                id: m.id,
+                storageObjectKey: m.storageObjectKey,
+                caption: m.caption,
+                memoryDate: m.memoryDate,
+                memoryTitle: m.memoryTitle,
+                width: m.width,
+                height: m.height,
+                orientation: m.orientation,
+                is4K: m.is4K,
+                focalPoint: m.focalPoint,
+                originalFilename: m.originalFilename,
+                originalUrl: '',
+                previewUrl: ''
+              }))
+            } : undefined
+          };
+          window.sessionStorage.setItem(sessionKey, JSON.stringify(minimalDraft));
+        } catch {}
+      }
     }
     // Backward compatibility mirror for existing tests and legacy recovery
     if (typeof window !== 'undefined' && window.localStorage) {
