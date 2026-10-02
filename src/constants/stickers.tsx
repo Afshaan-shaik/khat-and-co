@@ -340,7 +340,20 @@ export const STICKER_REGISTRY: Record<string, StickerDefinition> = {
     width: 84,
     height: 84,
     render: (todayDateStr) => {
-      const dateDisplay = todayDateStr || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+      let dateDisplay = '';
+      try {
+        if (todayDateStr) {
+          const parsed = new Date(todayDateStr);
+          if (!isNaN(parsed.getTime())) {
+            dateDisplay = parsed.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+          } else {
+            dateDisplay = String(todayDateStr).slice(0, 11).toUpperCase();
+          }
+        }
+      } catch {}
+      if (!dateDisplay) {
+        dateDisplay = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+      }
       return (
         <svg viewBox="0 0 84 84" width="100%" height="100%" fill="none">
           {/* Circular postal cancellation mark */}

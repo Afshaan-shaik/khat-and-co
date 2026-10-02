@@ -37,22 +37,13 @@ export function createDefaultLetter(): LetterData {
     waxSeal: { ...DEFAULT_WAX_SEAL },
     stickers: [
       {
-        id: 'init_stamp',
-        stickerId: 'stamp-airmail',
-        x: 82,
-        y: 6,
-        scale: 1.05,
-        rotation: 0,
-        zIndex: 2
-      },
-      {
         id: 'init_postmark',
         stickerId: 'postmark-date',
-        x: 74,
-        y: 11,
+        x: 88,
+        y: 8,
         scale: 0.95,
         rotation: 0,
-        zIndex: 3
+        zIndex: 2
       },
       {
         id: 'init_seal',
@@ -61,7 +52,7 @@ export function createDefaultLetter(): LetterData {
         y: 86,
         scale: 1,
         rotation: 0,
-        zIndex: 4
+        zIndex: 3
       }
     ]
   };
@@ -123,11 +114,22 @@ export function sanitizeLoadedLetter(raw: any): LetterData {
     };
   }
 
+  let stickers = Array.isArray(raw.stickers) ? raw.stickers : defaultLetter.stickers;
+  // If loaded draft is the unedited default letter template, clean up legacy init_stamp and align postmark to top-right corner
+  if (raw && (raw.recipient === 'Dearest Friend' || raw.greeting === 'My Dearest,') && Array.isArray(raw.stickers)) {
+    const hasLegacyDefaultStamp = raw.stickers.some((s: any) => s && s.id === 'init_stamp' && s.stickerId === 'stamp-airmail');
+    if (hasLegacyDefaultStamp && raw.sender === 'Me') {
+      stickers = raw.stickers
+        .filter((s: any) => s && s.id !== 'init_stamp')
+        .map((s: any) => (s && s.id === 'init_postmark' && s.x === 74 ? { ...s, x: 88, y: 8 } : s));
+    }
+  }
+
   return {
     ...defaultLetter,
     ...raw,
     waxSeal,
-    stickers: Array.isArray(raw.stickers) ? raw.stickers : [],
+    stickers,
     memoryFolio
   };
 }
