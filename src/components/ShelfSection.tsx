@@ -74,31 +74,6 @@ const SAMPLES = (): (LetterData & { sample?: boolean })[] => {
       stickers: [
         { id: 'stk_3', stickerId: 'heart', x: 82, y: 12, scale: 0.8, rotation: 12, zIndex: 1 }
       ]
-    },
-    {
-      id: 'sample_sam',
-      sample: true,
-      recipient: 'Sam',
-      sender: 'Rhea',
-      date: 'Monday, September 21, 2026',
-      greeting: 'Dear Sam,',
-      signoff: 'Yours,',
-      language: 'en',
-      fontId: 'apple',
-      fontSize: 's',
-      templateId: 'midnight',
-      inkColor: '#F1E8D2',
-      ruledLines: false,
-      waxSeal: { id: 'custom', symbol: 'R', isCustom: true, customText: 'R', color: 'gold' },
-      stamp: 1,
-      city: 'Leeds',
-      ps: '',
-      body:
-        'It is 2 a.m. where you are and I am pretending I do not know that.\n\nI wanted to tell you that the moon looked ridiculous tonight, huge and orange, and I thought: Sam would have said something rude about it. I miss that.\n\nSleep well.',
-      stickers: [
-        { id: 'stk_4', stickerId: 'moon', x: 84, y: 10, scale: 0.85, rotation: 8, zIndex: 1 },
-        { id: 'stk_5', stickerId: 'sparkle', x: 14, y: 88, scale: 0.7, rotation: 0, zIndex: 2 }
-      ]
     }
   ];
 };
